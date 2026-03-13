@@ -1592,43 +1592,65 @@ function trunc(ctx,t,maxW){
 // EXPORT
 // ════════════════════════════════════════════
 function buildOffCanvas(titleH){
-  const PAD=60,S=2;if(!nodes.length)return null;
-  const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y);
-  const x2=nodes.map(n=>n.x+n.w),y2=nodes.map(n=>n.y+n.h);
-  const minX=Math.min(...xs)-PAD,minY=Math.min(...ys)-PAD;
-  const maxX=Math.max(...x2)+PAD,maxY=Math.max(...y2)+PAD;
-  const cW=maxX-minX, cH=maxY-minY;
-  const W=cW*S, H=(cH+titleH)*S;
+  if(!nodes.length)return null;
+  const PAD=80, S=2; // S=2 pour haute résolution
+
+  // Bornes réelles de tous les nœuds
+  const xs=nodes.map(n=>n.x);
+  const ys=nodes.map(n=>n.y);
+  const x2=nodes.map(n=>n.x+n.w);
+  const y2=nodes.map(n=>n.y+n.h);
+  const minX=Math.min(...xs)-PAD;
+  const minY=Math.min(...ys)-PAD;
+  const maxX=Math.max(...x2)+PAD;
+  const maxY=Math.max(...y2)+PAD;
+  const cW=maxX-minX;
+  const cH=maxY-minY;
+
   const off=document.createElement('canvas');
-  off.width=W;off.height=H;
+  off.width=cW*S;
+  off.height=(cH+titleH)*S;
   const ctx=off.getContext('2d');
   ctx.scale(S,S);
-  ctx.fillStyle='#f0f4f8';ctx.fillRect(0,0,cW,cH+titleH);
-  // Dot grid background
-  ctx.fillStyle='rgba(120,140,160,0.25)';
-  const gSz=22;
-  for(let gx=0;gx<cW;gx+=gSz)
-    for(let gy=0;gy<cH+titleH;gy+=gSz)
-      {ctx.beginPath();ctx.arc(gx,gy,1,0,Math.PI*2);ctx.fill();}
 
+  // Fond quadrillé
+  ctx.fillStyle='#eef2f7';
+  ctx.fillRect(0,0,cW,cH+titleH);
+  ctx.fillStyle='rgba(100,120,150,0.2)';
+  const gSz=22;
+  for(let gx=0;gx<=cW;gx+=gSz)
+    for(let gy=titleH;gy<=cH+titleH;gy+=gSz){
+      ctx.beginPath();ctx.arc(gx,gy,1,0,Math.PI*2);ctx.fill();
+    }
+
+  // Barre de titre
   if(titleH>0){
-    // Title bar
     ctx.fillStyle='#1e293b';
     ctx.fillRect(0,0,cW,titleH);
-    ctx.fillStyle='#fff';
-    ctx.font=`bold 20px DM Sans,sans-serif`;
+    ctx.fillStyle='#ffffff';
+    ctx.font=`bold 22px DM Sans,sans-serif`;
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText('🗺️ '+siteName,cW/2,titleH*0.38);
-    ctx.fillStyle='rgba(255,255,255,0.55)';
+    ctx.fillText(siteName,cW/2,titleH*0.4);
+    ctx.fillStyle='rgba(255,255,255,0.5)';
     ctx.font=`12px JetBrains Mono,monospace`;
-    ctx.fillText(`${nodes.length} bâtiment${nodes.length>1?'s':''} · ${nodes.reduce((s,n)=>s+n.equipment.length,0)} équipements · ${new Date().toLocaleDateString('fr-FR')}`,cW/2,titleH*0.72);
+    ctx.fillText(
+      `${nodes.length} bâtiment${nodes.length>1?'s':''} · `+
+      `${nodes.reduce((s,n)=>s+n.equipment.length,0)} équipements · `+
+      `${new Date().toLocaleDateString('fr-FR')}`,
+      cW/2, titleH*0.72
+    );
   }
 
-  const stx=tx,sty=ty,ssc=sc;
-  tx=-minX;ty=-minY+titleH;sc=1;
+  // Dessiner le schéma — on repositionne tx/ty pour que minX,minY → 0,0
+  const stx=tx, sty=ty, ssc=sc;
+  tx = -minX;
+  ty = -minY + titleH;
+  sc = 1;
+
   edges.forEach(ed=>drawEdge(ctx,ed,false));
   nodes.forEach(nd=>drawNode(ctx,nd,false));
-  tx=stx;ty=sty;sc=ssc;
+
+  tx=stx; ty=sty; sc=ssc;
   return off;
 }
 
