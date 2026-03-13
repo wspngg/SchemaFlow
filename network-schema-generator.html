@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Schema Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #CC0000;
+    --red-dark: #990000;
+    --red-glow: rgba(204,0,0,0.3);
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #1a1a24;
+    --border: rgba(204,0,0,0.3);
+    --text: #e8e8f0;
+    --text-dim: #888899;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Rajdhani', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(204,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(204,0,0,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .screen { display: none; position: relative; z-index: 1; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; animation: fadeIn 0.3s ease; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, var(--red-dark), var(--red));
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--red-dark);
+    box-shadow: 0 4px 24px rgba(204,0,0,0.4);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--red-glow), transparent);
+  }
+
+  .header-title {
+    font-family: var(--mono);
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-title .dot {
+    width: 10px; height: 10px;
+    background: white;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+  .header-actions { display: flex; gap: 12px; }
+
+  /* BUTTONS */
+  .btn {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 1px;
+    padding: 10px 24px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.1);
+    transform: translateX(-100%);
+    transition: transform 0.3s;
+  }
+
+  .btn:hover::before { transform: translateX(0); }
+
+  .btn-primary {
+    background: var(--red);
+    color: white;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  .btn-primary:hover { background: var(--red-dark); box-shadow: 0 0 20px var(--red-glow); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .btn-secondary:hover { border-color: var(--red); color: var(--red); }
+
+  .btn-back {
+    background: rgba(0,0,0,0.4);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 13px;
+    padding: 8px 18px;
+  }
+
+  .btn-back:hover { border-color: white; }
+
+  .btn-generate {
+    background: linear-gradient(135deg, var(--red), var(--red-dark));
+    color: white;
+    font-size: 17px;
+    padding: 14px 48px;
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+    box-shadow: 0 4px 20px rgba(204,0,0,0.4);
+  }
+
+  .btn-generate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(204,0,0,0.6);
+  }
+
+  /* CONTENT */
+  .content { flex: 1; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+
+  /* INPUT ROW */
+  .input-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .input-field {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 15px;
+    padding: 12px 18px;
+    flex: 1;
+    outline: none;
+    transition: all 0.2s;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  }
+
+  .input-field:focus { border-color: var(--red); box-shadow: 0 0 16px var(--red-glow); }
+  .input-field::placeholder { color: var(--text-dim); }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--red);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--red-glow), transparent);
+  }
+
+  /* BUILDINGS GRID */
+  .buildings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    flex: 1;
+  }
+
+  .building-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+  }
+
+  .building-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--red);
+    transform: scaleY(0);
+    transition: transform 0.2s;
+  }
+
+  .building-card:hover { border-color: var(--red); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .building-card:hover::before { transform: scaleY(1); }
+
+  .building-name {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .building-equip-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .building-equip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .equip-tag {
+    background: rgba(204,0,0,0.15);
+    border: 1px solid rgba(204,0,0,0.3);
+    color: var(--red);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .building-arrow {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--red);
+    font-size: 20px;
+    opacity: 0;
+    transition: opacity 0.2s, right 0.2s;
+  }
+
+  .building-card:hover .building-arrow { opacity: 1; right: 12px; }
+
+  .btn-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(204,0,0,0.1);
+    border: 1px solid rgba(204,0,0,0.2);
+    color: var(--text-dim);
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .building-card:hover .btn-delete { opacity: 1; }
+  .btn-delete:hover { background: var(--red); color: white; }
+
+  /* FOOTER BAR */
+  .footer-bar {
+    padding: 20px 32px;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* SCREEN 2 - EQUIPMENT */
+  .equip-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    flex: 1;
+  }
+
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .equip-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 1px;
+    padding: 14px 20px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  }
+
+  .equip-btn:hover { background: rgba(204,0,0,0.1); border-color: var(--red); color: var(--red); }
+
+  .equip-btn .icon { font-size: 20px; width: 28px; text-align: center; }
+
+  .added-list { display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; }
+
+  .added-item {
+    background: var(--bg3);
+    border: 1px solid rgba(204,0,0,0.2);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation: slideIn 0.2s ease;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  }
+
+  @keyframes slideIn { from { opacity:0; transform: translateX(-10px); } to { opacity:1; transform: translateX(0); } }
+
+  .added-item-name { font-family: var(--mono); font-size: 14px; display: flex; align-items: center; gap: 10px; }
+
+  .btn-remove {
+    background: none;
+    border: 1px solid rgba(204,0,0,0.3);
+    color: var(--text-dim);
+    width: 28px; height: 28px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .btn-remove:hover { background: var(--red); color: white; border-color: var(--red); }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 40px 20px;
+    border: 1px dashed rgba(255,255,255,0.1);
+  }
+
+  /* POPUP */
+  .popup-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .popup-overlay.active { display: flex; animation: fadeIn 0.2s ease; }
+
+  .popup {
+    background: var(--bg2);
+    border: 1px solid var(--red);
+    padding: 40px;
+    width: 500px;
+    position: relative;
+    box-shadow: 0 0 60px rgba(204,0,0,0.3);
+    clip-path: polygon(20px 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%);
+  }
+
+  .popup-title {
+    font-family: var(--mono);
+    font-size: 18px;
+    letter-spacing: 2px;
+    color: var(--red);
+    margin-bottom: 24px;
+    text-transform: uppercase;
+  }
+
+  .popup-actions { display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end; }
+
+  /* SCREEN 3 - SCHEMA */
+  .schema-wrapper {
+    flex: 1;
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  #schemaCanvas {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    width: 100%;
+    flex: 1;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    background: var(--bg3);
+    border-top: 1px solid var(--border);
+    padding: 8px 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #00cc66; animation: pulse 2s infinite; }
+
+  /* EMPTY STATE */
+  .no-buildings {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 14px;
+    opacity: 0.5;
+  }
+
+  .no-buildings-icon { font-size: 48px; }
+
+  /* PDF PRINT */
+  @media print {
+    body * { visibility: hidden; }
+    #schemaCanvas, #schemaCanvas * { visibility: visible; }
+    #schemaCanvas { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--red-dark); }
+</style>
+</head>
+<body>
+
+<!-- ===== SCREEN 1 ===== -->
+<div id="screen1" class="screen active">
+  <div class="header">
+    <div class="header-title">
+      <div class="dot"></div>
+      NETWORK SCHEMA GENERATOR
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="section-label">Ajouter un bâtiment</div>
+    <div class="input-row">
+      <input class="input-field" id="inputBuilding" type="text" placeholder="Nom du bâtiment (ex: Usine, Labo, Agence...)" />
+      <button class="btn btn-primary" onclick="addBuilding()">+ AJOUTER</button>
+    </div>
+
+    <div class="section-label" style="margin-top:8px">Bâtiments configurés</div>
+
+    <div id="buildingsGrid" class="buildings-grid">
+      <div class="no-buildings">
+        <div class="no-buildings-icon">🏗️</div>
+        <span>Aucun bâtiment ajouté</span>
+        <span style="font-size:11px">Ajoutez des bâtiments pour commencer</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    <button class="btn btn-generate" onclick="openPopup()">⚡ GÉNÉRER LE SCHÉMA</button>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    <span>SYSTEM READY</span>
+    <span id="statusText">0 bâtiment · 0 équipement</span>
+  </div>
+</div>
+
+<!-- ===== SCREEN 2 ===== -->
+<div id="screen2" class="screen">
+  <div class="header">
+    <div class="header-actions">
+      <button class="btn btn-back" onclick="goBack()">← RETOUR</button>
+    </div>
+    <div class="header-title">
+      <span id="screen2Title">BÂTIMENT</span>
+    </div>
+    <div style="width:120px"></div>
+  </div>
+
+  <div class="content" style="flex-direction:row; gap:24px;">
+    <div class="equip-layout" style="flex:1;">
+
+      <!-- BIBLIOTHEQUE -->
+      <div class="panel">
+        <div class="section-label">Bibliothèque d'équipements</div>
+        <button class="equip-btn" onclick="addEquipment('Switch', '🔀')"><span class="icon">🔀</span>Switch</button>
+        <button class="equip-btn" onclick="addEquipment('Routeur', '🌐')"><span class="icon">🌐</span>Routeur</button>
+        <button class="equip-btn" onclick="addEquipment('Serveur', '💻')"><span class="icon">💻</span>Serveur</button>
+        <button class="equip-btn" onclick="addEquipment('WiFi AP', '📶')"><span class="icon">📶</span>WiFi AP</button>
+        <button class="equip-btn" onclick="addEquipment('Firewall', '🔥')"><span class="icon">🔥</span>Firewall</button>
+        <button class="equip-btn" onclick="addEquipment('PC', '🖥️')"><span class="icon">🖥️</span>PC</button>
+        <button class="equip-btn" onclick="addEquipment('Imprimante', '🖨️')"><span class="icon">🖨️</span>Imprimante</button>
+        <button class="equip-btn" onclick="addEquipment('Cloud/Internet', '☁️')"><span class="icon">☁️</span>Cloud / Internet</button>
+        <button class="equip-btn" onclick="addEquipment('NAS', '🗄️')"><span class="icon">🗄️</span>NAS</button>
+        <button class="equip-btn" onclick="addEquipment('Caméra IP', '📷')"><span class="icon">📷</span>Caméra IP</button>
+      </div>
+
+      <!-- EQUIPEMENTS AJOUTES -->
+      <div class="panel">
+        <div class="section-label">Équipements ajoutés</div>
+        <div id="addedList" class="added-list">
+          <div class="empty-state">// Cliquez sur un équipement<br>// pour l'ajouter au bâtiment</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 3 ===== -->
+<div id="screen3" class="screen">
+  <div class="header">
+    <div class="header-actions">
+      <button class="btn btn-back" onclick="goToScreen1()">← RETOUR</button>
+    </div>
+    <div class="header-title">
+      <span id="screen3Title">SCHÉMA RÉSEAU</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="downloadPDF()">⬇️ PDF</button>
+    </div>
+  </div>
+
+  <div class="schema-wrapper">
+    <div class="section-label" id="schemaLabel">Schéma généré</div>
+    <canvas id="schemaCanvas"></canvas>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    <span>SCHÉMA GÉNÉRÉ</span>
+    <span id="schemaStatus"></span>
+  </div>
+</div>
+
+<!-- ===== POPUP ===== -->
+<div id="popup" class="popup-overlay">
+  <div class="popup">
+    <div class="popup-title">▸ NOMMER LE SITE</div>
+    <div class="section-label" style="margin-bottom:12px">Nom du site réseau</div>
+    <input class="input-field" id="inputSiteName" type="text" placeholder="Ex: Site de Lyon, Siège Paris..." style="width:100%" />
+    <div class="popup-actions">
+      <button class="btn btn-secondary" onclick="closePopup()">ANNULER</button>
+      <button class="btn btn-primary" onclick="confirmGenerate()">✓ CONFIRMER</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+let buildings = [];
+let currentBuilding = null;
+let siteName = '';
+
+// ==================== NAVIGATION ====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goBack() { showScreen('screen1'); renderBuildings(); }
+function goToScreen1() { showScreen('screen1'); renderBuildings(); }
+
+// ==================== SCREEN 1 ====================
+function addBuilding() {
+  const input = document.getElementById('inputBuilding');
+  const name = input.value.trim();
+  if (!name) return;
+  buildings.push({ id: Date.now(), name, equipment: [] });
+  input.value = '';
+  renderBuildings();
+  updateStatus();
+}
+
+document.getElementById('inputBuilding').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addBuilding();
+});
+
+function deleteBuilding(id, e) {
+  e.stopPropagation();
+  buildings = buildings.filter(b => b.id !== id);
+  renderBuildings();
+  updateStatus();
+}
+
+function renderBuildings() {
+  const grid = document.getElementById('buildingsGrid');
+  if (buildings.length === 0) {
+    grid.innerHTML = `<div class="no-buildings"><div class="no-buildings-icon">🏗️</div><span>Aucun bâtiment ajouté</span><span style="font-size:11px">Ajoutez des bâtiments pour commencer</span></div>`;
+    return;
+  }
+  grid.innerHTML = buildings.map(b => `
+    <div class="building-card" onclick="openBuilding(${b.id})">
+      <button class="btn-delete" onclick="deleteBuilding(${b.id}, event)">✕</button>
+      <div class="building-name">${b.name}</div>
+      <div class="building-equip-count font-mono">${b.equipment.length} équipement${b.equipment.length !== 1 ? 's' : ''}</div>
+      ${b.equipment.length > 0 ? `<div class="building-equip-list">${b.equipment.slice(0,4).map(e => `<span class="equip-tag">${e.icon} ${e.name}</span>`).join('')}${b.equipment.length > 4 ? `<span class="equip-tag">+${b.equipment.length - 4}</span>` : ''}</div>` : ''}
+      <div class="building-arrow">›</div>
+    </div>
+  `).join('');
+}
+
+function updateStatus() {
+  const totalEquip = buildings.reduce((sum, b) => sum + b.equipment.length, 0);
+  document.getElementById('statusText').textContent = `${buildings.length} bâtiment${buildings.length !== 1 ? 's' : ''} · ${totalEquip} équipement${totalEquip !== 1 ? 's' : ''}`;
+}
+
+// ==================== SCREEN 2 ====================
+function openBuilding(id) {
+  currentBuilding = buildings.find(b => b.id === id);
+  document.getElementById('screen2Title').textContent = `🏢 ${currentBuilding.name.toUpperCase()}`;
+  renderAddedList();
+  showScreen('screen2');
+}
+
+function addEquipment(name, icon) {
+  if (!currentBuilding) return;
+  currentBuilding.equipment.push({ id: Date.now(), name, icon });
+  renderAddedList();
+  updateStatus();
+}
+
+function removeEquipment(id) {
+  if (!currentBuilding) return;
+  currentBuilding.equipment = currentBuilding.equipment.filter(e => e.id !== id);
+  renderAddedList();
+  updateStatus();
+}
+
+function renderAddedList() {
+  const list = document.getElementById('addedList');
+  if (!currentBuilding || currentBuilding.equipment.length === 0) {
+    list.innerHTML = `<div class="empty-state">// Cliquez sur un équipement<br>// pour l'ajouter au bâtiment</div>`;
+    return;
+  }
+  list.innerHTML = currentBuilding.equipment.map(e => `
+    <div class="added-item">
+      <div class="added-item-name">${e.icon} ${e.name}</div>
+      <button class="btn-remove" onclick="removeEquipment(${e.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+// ==================== POPUP ====================
+function openPopup() {
+  if (buildings.length === 0) { alert('Ajoutez au moins un bâtiment !'); return; }
+  document.getElementById('popup').classList.add('active');
+  document.getElementById('inputSiteName').focus();
+}
+
+function closePopup() {
+  document.getElementById('popup').classList.remove('active');
+}
+
+document.getElementById('inputSiteName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmGenerate();
+  if (e.key === 'Escape') closePopup();
+});
+
+function confirmGenerate() {
+  const name = document.getElementById('inputSiteName').value.trim();
+  if (!name) { alert('Entrez un nom de site !'); return; }
+  siteName = name;
+  closePopup();
+  generateSchema();
+}
+
+// ==================== SCHEMA GENERATION ====================
+function generateSchema() {
+  showScreen('screen3');
+  document.getElementById('screen3Title').textContent = `🗺️ RÉSEAU — ${siteName.toUpperCase()}`;
+  document.getElementById('schemaLabel').textContent = `Schéma réseau · ${siteName}`;
+
+  const totalEquip = buildings.reduce((sum, b) => sum + b.equipment.length, 0);
+  document.getElementById('schemaStatus').textContent = `${buildings.length} bâtiments · ${totalEquip} équipements`;
+
+  setTimeout(drawSchema, 100);
+}
+
+function drawSchema() {
+  const canvas = document.getElementById('schemaCanvas');
+  const wrapper = canvas.parentElement;
+  canvas.width = wrapper.clientWidth - 2;
+  canvas.height = wrapper.clientHeight - 80;
+
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // Background
+  ctx.fillStyle = '#111118';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(204,0,0,0.05)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  if (buildings.length === 0) return;
+
+  const n = buildings.length;
+  const padding = 80;
+
+  // Compute building box sizes
+  const boxW = Math.min(200, Math.max(150, (W - padding * 2) / n - 30));
+  const equipH = 28;
+  const headerH = 50;
+
+  const positions = buildings.map((b, i) => {
+    const cols = Math.min(n, Math.ceil(Math.sqrt(n * 1.5)));
+    const rows = Math.ceil(n / cols);
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const totalW = cols * (boxW + 40) - 40;
+    const startX = (W - totalW) / 2;
+    const boxH = headerH + Math.max(b.equipment.length, 1) * equipH + 20;
+    const totalH = rows * (boxH + 60) - 60;
+    const startY = (H - totalH) / 2;
+    return {
+      x: startX + col * (boxW + 40),
+      y: startY + row * (boxH + 60),
+      w: boxW,
+      h: boxH,
+      cx: startX + col * (boxW + 40) + boxW / 2,
+      cy: startY + row * (boxH + 60) + boxH / 2,
+      building: b
+    };
+  });
+
+  // Draw connections between all buildings
+  ctx.setLineDash([6, 4]);
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < positions.length; i++) {
+    for (let j = i + 1; j < positions.length; j++) {
+      const a = positions[i], b2 = positions[j];
+      const grad = ctx.createLinearGradient(a.cx, a.cy, b2.cx, b2.cy);
+      grad.addColorStop(0, 'rgba(204,0,0,0.5)');
+      grad.addColorStop(0.5, 'rgba(204,0,0,0.8)');
+      grad.addColorStop(1, 'rgba(204,0,0,0.5)');
+      ctx.strokeStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(a.cx, a.cy);
+      ctx.lineTo(b2.cx, b2.cy);
+      ctx.stroke();
+
+      // Connection dot at midpoint
+      const mx = (a.cx + b2.cx) / 2;
+      const my = (a.cy + b2.cy) / 2;
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#CC0000';
+      ctx.beginPath();
+      ctx.arc(mx, my, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.setLineDash([6, 4]);
+    }
+  }
+  ctx.setLineDash([]);
+
+  // Draw building boxes
+  positions.forEach(pos => {
+    const { x, y, w, h, building } = pos;
+
+    // Glow
+    ctx.shadowColor = 'rgba(204,0,0,0.4)';
+    ctx.shadowBlur = 16;
+
+    // Box border
+    ctx.strokeStyle = '#CC0000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+
+    ctx.shadowBlur = 0;
+
+    // Header fill
+    const headerGrad = ctx.createLinearGradient(x, y, x, y + headerH);
+    headerGrad.addColorStop(0, 'rgba(204,0,0,0.5)');
+    headerGrad.addColorStop(1, 'rgba(204,0,0,0.15)');
+    ctx.fillStyle = headerGrad;
+    ctx.fillRect(x, y, w, headerH);
+
+    // Box body
+    ctx.fillStyle = 'rgba(17,17,24,0.95)';
+    ctx.fillRect(x, y + headerH, w, h - headerH);
+
+    // Header line
+    ctx.strokeStyle = 'rgba(204,0,0,0.8)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y + headerH);
+    ctx.lineTo(x + w, y + headerH);
+    ctx.stroke();
+
+    // Building name
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold 15px 'Rajdhani', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(building.name.toUpperCase(), x + w / 2, y + 32);
+
+    // Equipment list
+    ctx.font = `13px 'Share Tech Mono', monospace`;
+    ctx.textAlign = 'left';
+    building.equipment.forEach((eq, idx) => {
+      const ey = y + headerH + 10 + idx * equipH;
+      // Item bg on hover (alternating)
+      if (idx % 2 === 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.02)';
+        ctx.fillRect(x + 1, ey, w - 2, equipH - 2);
+      }
+      ctx.fillStyle = '#cc4444';
+      ctx.fillText('›', x + 10, ey + 18);
+      ctx.fillStyle = '#e8e8f0';
+      ctx.fillText(`${eq.icon} ${eq.name}`, x + 24, ey + 18);
+    });
+
+    if (building.equipment.length === 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      ctx.textAlign = 'center';
+      ctx.font = `12px 'Share Tech Mono', monospace`;
+      ctx.fillText('// vide', x + w / 2, y + headerH + 30);
+    }
+
+    // Corner accents
+    const ca = 10;
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    // Top-left
+    ctx.beginPath(); ctx.moveTo(x, y + ca); ctx.lineTo(x, y); ctx.lineTo(x + ca, y); ctx.stroke();
+    // Top-right
+    ctx.beginPath(); ctx.moveTo(x + w - ca, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + ca); ctx.stroke();
+    // Bottom-left
+    ctx.beginPath(); ctx.moveTo(x, y + h - ca); ctx.lineTo(x, y + h); ctx.lineTo(x + ca, y + h); ctx.stroke();
+    // Bottom-right
+    ctx.beginPath(); ctx.moveTo(x + w - ca, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - ca); ctx.stroke();
+  });
+
+  // Site name watermark
+  ctx.fillStyle = 'rgba(204,0,0,0.08)';
+  ctx.font = `bold 80px 'Rajdhani', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(siteName.toUpperCase(), W / 2, H / 2 + 30);
+}
+
+// ==================== PDF DOWNLOAD ====================
+function downloadPDF() {
+  const canvas = document.getElementById('schemaCanvas');
+  const img = canvas.toDataURL('image/png');
+
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <!DOCTYPE html><html><head>
+    <title>Réseau - ${siteName}</title>
+    <style>
+      body { margin: 0; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; }
+      h1 { color: #CC0000; font-size: 24px; margin-bottom: 20px; letter-spacing: 4px; }
+      img { max-width: 100%; border: 2px solid #CC0000; }
+      @media print { body { background: white; } h1 { color: black; } }
+    </style>
+    </head><body>
+    <h1>RÉSEAU — ${siteName.toUpperCase()}</h1>
+    <img src="${img}" />
+    <script>setTimeout(() => window.print(), 500)<\/script>
+    </body></html>
+  `);
+  win.document.close();
+}
+
+// Handle resize
+window.addEventListener('resize', () => {
+  if (document.getElementById('screen3').classList.contains('active')) {
+    drawSchema();
+  }
+});
+</script>
+</body>
+</html>
