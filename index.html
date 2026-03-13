@@ -502,16 +502,16 @@ let hist=[],hIdx=-1;
 
 // Node layout constants
 const ICO=36;   // icon size in node
-const CEL=80;   // cell width (increased for notes)
-const CER=72;   // cell height (icon+label+note)
+const CEL=84;   // cell width — wider for full text
+const CER=68;   // cell height (icon+label, 2 lines possible)
 const CPR=3;    // cells per row
-const NH=42;    // node header height
-const NP=12;    // node padding
+const NH=38;    // node header height
+const NP=10;    // node padding
 
-function noteLines(ctx,note,maxW,fontSize){
-  if(!note)return[];
-  ctx.font=`400 ${fontSize}px DM Sans,sans-serif`;
-  const words=note.split(/\s+/);
+// Wrap text into lines fitting maxW
+function wrapText(ctx,t,maxW){
+  if(!t)return[];
+  const words=t.split(/\s+/);
   const lines=[];let cur='';
   words.forEach(w=>{
     const test=cur?cur+' '+w:w;
@@ -522,28 +522,37 @@ function noteLines(ctx,note,maxW,fontSize){
   return lines;
 }
 
+function noteLines(ctx,note,maxW,fontSize){
+  if(!note)return[];
+  ctx.save();ctx.font=`400 ${fontSize}px DM Sans,sans-serif`;
+  const lines=wrapText(ctx,note,maxW);
+  ctx.restore();return lines;
+}
+
 function nodeSize(eqCount,equipment){
   const cols=Math.min(eqCount||1,CPR);
   const rows=Math.max(Math.ceil(eqCount/CPR),1);
   const w=Math.max(cols*CEL+NP*2,180);
-  // Calculate extra height needed for notes
-  let maxNoteLines=0;
+  // Calculate extra height per row for wrapped labels + notes
+  let maxLabelLines=1, maxNoteLines=0;
   if(equipment){
-    // Group by row, find max note lines per row
     const tempCtx=document.createElement('canvas').getContext('2d');
-    for(let r=0;r<rows;r++){
-      const rowEqs=equipment.slice(r*CPR,(r+1)*CPR);
-      rowEqs.forEach(eq=>{
-        if(eq.note&&eq.note.trim()){
-          const nl=noteLines(tempCtx,eq.note,CEL-8,9);
-          maxNoteLines=Math.max(maxNoteLines,nl.length);
-        }
-      });
-    }
+    equipment.forEach(eq=>{
+      tempCtx.font=`600 11px DM Sans,sans-serif`;
+      const lbl=eq.label||eq.typeName||'';
+      const ll=wrapText(tempCtx,lbl,CEL-8);
+      maxLabelLines=Math.max(maxLabelLines,ll.length);
+      if(eq.note&&eq.note.trim()){
+        tempCtx.font=`400 9px DM Sans,sans-serif`;
+        const nl=noteLines(tempCtx,eq.note,CEL-8,9);
+        maxNoteLines=Math.max(maxNoteLines,nl.length);
+      }
+    });
   }
-  const noteExtra=maxNoteLines>0?maxNoteLines*11+4:0;
-  const h=NH+NP+rows*(CER+noteExtra)+NP;
-  return{w,h,noteExtra};
+  const extraLabel=Math.max(0,(maxLabelLines-1)*13);
+  const extraNote=maxNoteLines>0?maxNoteLines*11+4:0;
+  const h=NH+NP+rows*(CER+extraLabel+extraNote)+NP;
+  return{w,h,extraLabel,extraNote};
 }
 
 // ════════════════════════════════════════════
@@ -1252,133 +1261,142 @@ function drawNode(ctx,nd,isSel){
   hg.addColorStop(0,'#1e3a8a');hg.addColorStop(1,'#1d4ed8');
   ctx.fillStyle=hg;ctx.fill();ctx.restore();
 
-  // Building label in header
+  // Building label in header — no emoji, full name centered
   ctx.save();
   ctx.fillStyle='#fff';
-  ctx.font=`600 ${13}px DM Sans,sans-serif`;
-  ctx.textBaseline='middle';ctx.textAlign='left';
-  // Little building icon
-  ctx.font=`${14}px sans-serif`;
-  ctx.fillText('🏢',x+NP,y+NH/2);
-  ctx.font=`600 ${13}px DM Sans,sans-serif`;
-  ctx.fillText(trunc(ctx,label,w-NP*2-22),x+NP+22,y+NH/2);
+  ctx.font=`700 ${13}px DM Sans,sans-serif`;
+  ctx.textBaseline='middle';ctx.textAlign='center';
+  ctx.fillText(trunc(ctx,label,w-NP*2),x+w/2,y+NH/2);
   ctx.restore();
 
   // Header divider
   ctx.beginPath();ctx.moveTo(x,y+NH);ctx.lineTo(x+w,y+NH);
   ctx.strokeStyle='rgba(255,255,255,.15)';ctx.lineWidth=1/sc;ctx.stroke();
 
-  // Equipment grid (draw.io style: icon + name below + note)
+  // Equipment grid — icon + wrapped name + note
   const rows=Math.ceil(equipment.length/CPR);
-  // Pre-measure max note lines per row for vertical alignment
-  const rowNoteH=[];
+
+  // Compute per-row extra height (label overflow + notes)
+  const rowCellH=[];
   for(let r=0;r<rows;r++){
     const rowEqs=equipment.slice(r*CPR,(r+1)*CPR);
-    let maxNL=0;
+    let maxLL=1,maxNL=0;
     rowEqs.forEach(eq=>{
+      ctx.font=`600 11px DM Sans,sans-serif`;
+      const ll=wrapText(ctx,eq.label||eq.typeName||'',CEL-8);
+      maxLL=Math.max(maxLL,ll.length);
       if(eq.note&&eq.note.trim()){
-        ctx.font=`400 9px DM Sans,sans-serif`;
         const nl=noteLines(ctx,eq.note,CEL-8,9);
         maxNL=Math.max(maxNL,nl.length);
       }
     });
-    rowNoteH.push(maxNL>0?maxNL*11+4:0);
+    rowCellH.push(CER+Math.max(0,(maxLL-1)*13)+(maxNL>0?maxNL*11+4:0));
   }
 
-  let rowY=y+NH+NP;
-  equipment.forEach((eq,i)=>{
-    const col=i%CPR, row=Math.floor(i/CPR);
+  let rowTopY=y+NH+NP;
+  for(let r=0;r<rows;r++){
+    const rowEqs=equipment.slice(r*CPR,(r+1)*CPR);
     const cols=Math.min(equipment.length,CPR);
-    const gridW=cols*CEL;
+    const gridW=Math.min(rowEqs.length,CPR)*CEL;
     const startX=x+(w-gridW)/2;
-    const cx2=startX+col*CEL+CEL/2;
-    const cy2=rowY+row*(CER+rowNoteH[row]||0)+CER/2;
+    const cellH=rowCellH[r];
 
-    const ISIZ=28;
+    rowEqs.forEach((eq,ci)=>{
+      const cx2=startX+ci*CEL+CEL/2;
+      const cy2=rowTopY+cellH/2;
+      const ISIZ=28;
+      const iconCY=rowTopY+8+ISIZ/2; // icon top-aligned in cell
 
-    // Icon background circle
-    ctx.save();
-    ctx.beginPath();ctx.arc(cx2,cy2-8,ISIZ/2+4,0,Math.PI*2);
-    ctx.fillStyle='rgba(219,234,254,.6)';ctx.fill();
-    ctx.restore();
-
-    drawIcon(ctx,eq.icon,cx2-ISIZ/2,cy2-ISIZ/2-8,ISIZ);
-
-    // Equipment label below icon
-    ctx.save();
-    ctx.fillStyle='#1e293b';
-    ctx.font=`600 ${11}px DM Sans,sans-serif`;
-    ctx.textAlign='center';ctx.textBaseline='top';
-    const lbTxt=trunc(ctx,eq.label||eq.typeName,CEL-6);
-    ctx.fillText(lbTxt,cx2,cy2+ISIZ/2-5);
-    ctx.restore();
-
-    // Note below label
-    if(eq.note&&eq.note.trim()){
+      // Icon background circle
       ctx.save();
-      ctx.fillStyle='#64748b';
-      ctx.font=`400 9px DM Sans,sans-serif`;
-      ctx.textAlign='center';ctx.textBaseline='top';
-      const noteY=cy2+ISIZ/2-5+14;
-      const nl=noteLines(ctx,eq.note,CEL-8,9);
-      nl.forEach((line,li)=>{
-        ctx.fillText(line,cx2,noteY+li*11);
-      });
+      ctx.beginPath();ctx.arc(cx2,iconCY,ISIZ/2+4,0,Math.PI*2);
+      ctx.fillStyle='rgba(219,234,254,.65)';ctx.fill();
       ctx.restore();
-    }
-  });
+
+      drawIcon(ctx,eq.icon,cx2-ISIZ/2,iconCY-ISIZ/2,ISIZ);
+
+      // Equipment label — wrap, full text
+      const labelTop=rowTopY+8+ISIZ+6;
+      ctx.save();
+      ctx.fillStyle='#1e293b';
+      ctx.font=`600 11px DM Sans,sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='top';
+      const lblLines=wrapText(ctx,eq.label||eq.typeName||'',CEL-6);
+      lblLines.forEach((ln,li)=>ctx.fillText(ln,cx2,labelTop+li*13));
+      ctx.restore();
+
+      // Note below label
+      if(eq.note&&eq.note.trim()){
+        const noteTop=labelTop+lblLines.length*13+2;
+        ctx.save();
+        ctx.fillStyle='#64748b';
+        ctx.font=`400 9px DM Sans,sans-serif`;
+        ctx.textAlign='center';ctx.textBaseline='top';
+        const nl=noteLines(ctx,eq.note,CEL-8,9);
+        nl.forEach((ln,li)=>ctx.fillText(ln,cx2,noteTop+li*11));
+        ctx.restore();
+      }
+    });
+
+    rowTopY+=cellH;
+  }
 
   ctx.restore();
 }
 
 // ════════════════════════════════════════════
-// ICON PRELOADING (fix white circles)
+// ICON SYSTEM — base64 data URIs (reliable cross-context)
 // ════════════════════════════════════════════
 const icC={};
 const icLoading={};
 
+function svgToDataURI(svg){
+  // Use base64 encoding for maximum compatibility
+  try{
+    return 'data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(svg)));
+  }catch(e){
+    return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  }
+}
+
 function preloadAllIcons(callback){
   const iconKeys=Object.keys(ICONS);
-  const sizes=[28,32,36];
+  const sizes=[28,32,36,40];
   let pending=0;
+  const done=()=>{pending--;if(pending===0&&callback)callback();};
   iconKeys.forEach(id=>{
     sizes.forEach(sz=>{
       const k=id+'_'+sz;
-      if(icC[k])return;
+      if(icC[k]){return;}
       pending++;
-      const svg=ICONS[id];
-      const blob=new Blob([svg],{type:'image/svg+xml'});
-      const url=URL.createObjectURL(blob);
-      const img=new Image();
-      img.onload=()=>{icC[k]=img;URL.revokeObjectURL(url);pending--;if(pending===0&&callback)callback();};
-      img.onerror=()=>{URL.revokeObjectURL(url);pending--;if(pending===0&&callback)callback();};
-      img.src=url;
+      const img=new Image(sz,sz);
+      img.onload=()=>{icC[k]=img;done();};
+      img.onerror=()=>{done();};
+      img.src=svgToDataURI(ICONS[id]);
     });
   });
-  if(pending===0&&callback)callback();
+  if(pending===0&&callback)setTimeout(callback,0);
 }
 
 function drawIcon(ctx,id,x,y,sz){
   const k=id+'_'+sz;
-  if(icC[k]){try{ctx.drawImage(icC[k],x,y,sz,sz);}catch(e){}return;}
-  // Fallback: draw a colored square with first letter
+  if(icC[k]){
+    try{ctx.drawImage(icC[k],x,y,sz,sz);}catch(e){}
+    return;
+  }
+  // Trigger async load then redraw
+  if(!icLoading[k]){
+    icLoading[k]=true;
+    const img=new Image(sz,sz);
+    img.onload=()=>{icC[k]=img;delete icLoading[k];redraw();};
+    img.onerror=()=>{delete icLoading[k];};
+    img.src=svgToDataURI(ICONS[id]);
+  }
+  // Placeholder circle while loading
   ctx.save();
-  ctx.fillStyle='rgba(47,129,247,0.15)';
-  ctx.beginPath();ctx.arc(x+sz/2,y+sz/2,sz/2,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#2f81f7';ctx.font=`bold ${sz*0.5}px sans-serif`;
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText((id||'?')[0].toUpperCase(),x+sz/2,y+sz/2);
+  ctx.beginPath();ctx.arc(x+sz/2,y+sz/2,sz/2-1,0,Math.PI*2);
+  ctx.fillStyle='rgba(219,234,254,0.8)';ctx.fill();
   ctx.restore();
-  // Async load
-  if(icLoading[k])return;
-  icLoading[k]=true;
-  const svg=ICONS[id];if(!svg)return;
-  const blob=new Blob([svg],{type:'image/svg+xml'});
-  const url=URL.createObjectURL(blob);
-  const img=new Image();
-  img.onload=()=>{icC[k]=img;URL.revokeObjectURL(url);delete icLoading[k];redraw();};
-  img.onerror=()=>{URL.revokeObjectURL(url);delete icLoading[k];};
-  img.src=url;
 }
 
 function rr(ctx,x,y,w,h,r){
