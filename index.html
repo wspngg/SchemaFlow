@@ -2,1676 +2,1367 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>NetSchema — Network Diagram Generator</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:       #0d1117;
-  --bg2:      #161b22;
-  --bg3:      #1c2128;
-  --bg4:      #21262d;
-  --border:   #30363d;
-  --border2:  #3d444d;
-  --text:     #e6edf3;
-  --text2:    #7d8590;
-  --text3:    #484f58;
-  --blue:     #2f81f7;
-  --blue-dim: rgba(47,129,247,0.12);
-  --blue-glow:rgba(47,129,247,0.25);
-  --green:    #3fb950;
-  --green-dim:rgba(63,185,80,0.12);
-  --red:      #f85149;
-  --red-dim:  rgba(248,81,73,0.12);
-  --orange:   #e3b341;
-  --shadow:   0 8px 32px rgba(0,0,0,0.4);
-  --radius:   8px;
-  --font:     'DM Sans', sans-serif;
-  --mono:     'JetBrains Mono', monospace;
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#21262d;
+  --border:#30363d;--border2:#3d444d;
+  --text:#e6edf3;--text2:#7d8590;--text3:#484f58;
+  --blue:#2f81f7;--bdim:rgba(47,129,247,.12);--bglow:rgba(47,129,247,.28);
+  --green:#3fb950;--gdim:rgba(63,185,80,.12);
+  --red:#f85149;--rdim:rgba(248,81,73,.12);
+  --orange:#e3b341;--purple:#a371f7;
+  --r:8px;--font:'DM Sans',sans-serif;--mono:'JetBrains Mono',monospace;
 }
-
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;}
+.app{display:flex;flex-direction:column;height:100vh;}
 
-body {
-  font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-/* ── LAYOUT ── */
-.app { display:flex; flex-direction:column; height:100vh; }
-
-.topbar {
-  height: 52px;
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  gap: 16px;
-  flex-shrink: 0;
-  z-index: 100;
-}
-
-.topbar-logo {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 15px; font-weight: 600; color: var(--text);
-  text-decoration: none;
-}
-
-.logo-icon {
-  width: 28px; height: 28px;
-  background: var(--blue);
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
-}
-
-.topbar-sep { width:1px; height:20px; background:var(--border); }
-
-.breadcrumb {
-  display:flex; align-items:center; gap:8px;
-  font-size:13px; color:var(--text2);
-}
-.breadcrumb .active { color: var(--text); font-weight:500; }
-.breadcrumb .chevron { color: var(--text3); }
-
-.topbar-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+/* ── TOPBAR ── */
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;}
+.logo{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;color:var(--text);}
+.logo-mark{width:28px;height:28px;background:linear-gradient(135deg,#2f81f7,#388bfd);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 8px rgba(47,129,247,.4);}
+.topbar-div{width:1px;height:20px;background:var(--border);}
+.topbar-r{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.chip-blue{background:var(--bdim);color:var(--blue);border:1px solid rgba(47,129,247,.22);}
+.chip-green{background:var(--gdim);color:var(--green);border:1px solid rgba(63,185,80,.22);}
+.chip-orange{background:rgba(227,179,65,.1);color:var(--orange);border:1px solid rgba(227,179,65,.22);}
 
 /* ── STEPS ── */
-.steps {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  background: var(--bg3);
-  border-bottom: 1px solid var(--border);
-  padding: 0 20px;
-  height: 48px;
-  flex-shrink: 0;
-}
-
-.step {
-  display: flex; align-items: center; gap: 10px;
-  padding: 0 20px; height: 100%;
-  font-size: 13px; font-weight: 500;
-  color: var(--text2);
-  position: relative;
-  cursor: default;
-  transition: color 0.2s;
-  white-space: nowrap;
-}
-
-.step::after {
-  content:'';
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 2px; background: var(--blue);
-  transform: scaleX(0);
-  transition: transform 0.2s;
-}
-
-.step.active { color: var(--text); }
-.step.active::after { transform: scaleX(1); }
-.step.done { color: var(--green); }
-
-.step-num {
-  width: 20px; height: 20px;
-  border-radius: 50%;
-  border: 1px solid var(--border2);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-family: var(--mono);
-  flex-shrink: 0;
-}
-.step.active .step-num { background: var(--blue); border-color: var(--blue); color: white; }
-.step.done .step-num { background: var(--green); border-color: var(--green); color: white; }
-
-.step-sep { color: var(--text3); font-size: 12px; padding: 0 4px; }
+.steps{display:flex;align-items:center;background:var(--bg3);border-bottom:1px solid var(--border);padding:0 20px;height:46px;flex-shrink:0;}
+.step{display:flex;align-items:center;gap:9px;padding:0 18px;height:100%;font-size:13px;font-weight:500;color:var(--text2);position:relative;white-space:nowrap;}
+.step::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--blue);transform:scaleX(0);transition:transform .2s;}
+.step.active{color:var(--text);}
+.step.active::after{transform:scaleX(1);}
+.step.done{color:var(--green);}
+.step-n{width:19px;height:19px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--mono);}
+.step.active .step-n{background:var(--blue);border-color:var(--blue);color:#fff;}
+.step.done .step-n{background:var(--green);border-color:var(--green);color:#fff;}
+.step-arr{color:var(--text3);padding:0 2px;}
 
 /* ── SCREENS ── */
-.screen { display:none; flex:1; overflow:hidden; }
-.screen.active { display:flex; }
+.screen{display:none;flex:1;overflow:hidden;}
+.screen.active{display:flex;}
 
-/* ── SCREEN 1 ── */
-#s1 { flex-direction: column; gap: 0; }
+/* ══════════════ SCREEN 1 ══════════════ */
+#s1{flex-direction:column;}
+.s1-body{flex:1;display:flex;flex-direction:column;padding:28px 32px;gap:18px;overflow-y:auto;}
+.pg-title{font-size:22px;font-weight:700;letter-spacing:-.3px;}
+.pg-sub{font-size:13px;color:var(--text2);margin-top:3px;}
+.add-row{display:flex;gap:9px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:11px 14px;align-items:center;}
+.add-row input{flex:1;background:none;border:none;outline:none;font-family:var(--font);font-size:14px;color:var(--text);}
+.add-row input::placeholder{color:var(--text3);}
+.bldg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;}
+.bldg-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:15px;cursor:pointer;transition:all .2s;position:relative;}
+.bldg-card:hover{border-color:var(--border2);background:var(--bg3);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.bldg-card.ok{border-color:rgba(63,185,80,.4);background:linear-gradient(135deg,var(--bg2),rgba(63,185,80,.03));}
+.bldg-hd{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.bldg-icon{width:34px;height:34px;background:var(--bdim);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.bldg-card.ok .bldg-icon{background:var(--gdim);}
+.bldg-nm{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bldg-meta{font-size:12px;color:var(--text2);margin-top:1px;}
+.vbadge{display:inline-flex;align-items:center;gap:3px;background:var(--gdim);color:var(--green);border:1px solid rgba(63,185,80,.3);border-radius:20px;font-size:10px;font-weight:600;padding:2px 7px;}
+.eq-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+.eq-chip{display:flex;align-items:center;gap:4px;background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:11px;color:var(--text2);}
+.card-acts{position:absolute;top:9px;right:9px;display:flex;gap:5px;opacity:0;transition:opacity .15s;}
+.bldg-card:hover .card-acts{opacity:1;}
+.ca-btn{width:24px;height:24px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;}
+.ca-btn:hover{border-color:var(--border2);color:var(--text);}
+.ca-btn.del:hover{border-color:var(--red);color:var(--red);background:var(--rdim);}
+.empty-st{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 20px;color:var(--text2);gap:10px;border:1px dashed var(--border);border-radius:var(--r);}
+.empty-ic{font-size:38px;opacity:.35;}
+.abar{background:var(--bg2);border-top:1px solid var(--border);padding:15px 32px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.abar-info{font-size:13px;color:var(--text2);}
+.abar-info strong{color:var(--text);}
 
-.s1-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 28px 32px;
-  gap: 20px;
-  overflow-y: auto;
+/* ══════════════ SCREEN 2 ══════════════ */
+#s2{flex-direction:row;}
+.s2-side{width:272px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.side-hd{padding:14px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.side-ttl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text2);margin-bottom:10px;}
+.srch{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 11px;font-family:var(--font);font-size:13px;color:var(--text);outline:none;}
+.srch:focus{border-color:var(--blue);}
+.srch::placeholder{color:var(--text3);}
+.eq-cats{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:3px;}
+.cat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);padding:8px 8px 3px;}
+.eq-it{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:6px;cursor:pointer;transition:all .15s;border:1px solid transparent;}
+.eq-it:hover{background:var(--bdim);border-color:rgba(47,129,247,.18);}
+.eq-it-ic{width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.eq-it-ic svg{width:100%;height:100%;}
+.eq-it-nm{font-size:13px;font-weight:500;color:var(--text);}
+.eq-it-ds{font-size:11px;color:var(--text2);margin-top:1px;}
+.s2-main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.s2-top{height:50px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:10px;flex-shrink:0;}
+.bldg-badge{display:flex;align-items:center;gap:7px;background:var(--bdim);border:1px solid rgba(47,129,247,.3);border-radius:6px;padding:4px 11px;font-size:13px;font-weight:600;color:var(--blue);}
+.s2-content{flex:1;padding:22px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+.sec-ttl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);padding-bottom:8px;border-bottom:1px solid var(--border);}
+.added-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:9px;}
+.added-card{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:12px;display:flex;align-items:center;gap:11px;position:relative;animation:popIn .18s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.added-ic{width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.added-ic svg{width:100%;height:100%;}
+.added-nm{font-size:13px;font-weight:500;flex:1;}
+.rm-btn{width:20px;height:20px;border:1px solid var(--border);background:none;color:var(--text3);border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;opacity:0;transition:all .15s;}
+.added-card:hover .rm-btn{opacity:1;}
+.rm-btn:hover{background:var(--rdim);color:var(--red);border-color:var(--red);}
+.s2-foot{background:var(--bg2);border-top:1px solid var(--border);padding:13px 22px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+
+/* ══════════════ BUTTONS ══════════════ */
+.btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--font);font-size:13px;font-weight:500;padding:7px 13px;border-radius:6px;border:1px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-p{background:var(--blue);color:#fff;border-color:var(--blue);}
+.btn-p:hover{background:#388bfd;box-shadow:0 0 0 3px var(--bglow);}
+.btn-s{background:var(--bg4);color:var(--text);border-color:var(--border2);}
+.btn-s:hover{background:var(--bg3);}
+.btn-g{background:transparent;color:var(--text2);border-color:transparent;}
+.btn-g:hover{background:var(--bg4);color:var(--text);}
+.btn-d{background:var(--rdim);color:var(--red);border-color:rgba(248,81,73,.3);}
+.btn-d:hover{background:rgba(248,81,73,.22);}
+.btn-ok{background:var(--green);color:#0d1117;border-color:var(--green);font-weight:700;}
+.btn-ok:hover{background:#46c956;}
+.btn-lg{padding:9px 18px;font-size:14px;border-radius:7px;}
+.btn-ic{width:30px;height:30px;padding:0;justify-content:center;font-size:15px;}
+
+/* ══════════════ MODAL ══════════════ */
+.overlay{position:fixed;inset:0;background:rgba(1,4,9,.87);backdrop-filter:blur(7px);z-index:1000;display:none;align-items:center;justify-content:center;}
+.overlay.open{display:flex;animation:fade .18s ease;}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:13px;padding:26px;width:470px;box-shadow:0 28px 70px rgba(0,0,0,.65);animation:slideup .22s cubic-bezier(.34,1.2,.64,1);}
+@keyframes slideup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.modal-ttl{font-size:17px;font-weight:700;}
+.modal-sub{font-size:13px;color:var(--text2);margin-top:4px;margin-bottom:20px;}
+.fg{margin-bottom:14px;}
+.fl{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:9px 13px;font-family:var(--font);font-size:14px;color:var(--text);outline:none;transition:border-color .15s;}
+.fi:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--bglow);}
+.fi::placeholder{color:var(--text3);}
+.modal-acts{display:flex;gap:9px;justify-content:flex-end;margin-top:22px;}
+
+/* ══════════════ SCREEN 3 — DIAGRAM ══════════════ */
+#s3{flex-direction:row;}
+
+/* Inspector sidebar */
+.insp{
+  width:268px;flex-shrink:0;
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
 }
 
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
+.insp-section{padding:13px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.insp-ttl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:10px;}
+
+/* Tool buttons */
+.tools-row{display:flex;gap:5px;flex-wrap:wrap;}
+.tool{
+  flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:5px;
+  padding:7px 8px;border-radius:6px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text2);
+  font-size:12px;font-family:var(--font);font-weight:500;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
 }
+.tool:hover{border-color:var(--border2);color:var(--text);}
+.tool.on{background:var(--bdim);border-color:rgba(47,129,247,.4);color:var(--blue);}
+.tool.on-red{background:var(--rdim);border-color:rgba(248,81,73,.3);color:var(--red);}
 
-.page-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.3px;
-}
-.page-subtitle { font-size: 13px; color: var(--text2); margin-top: 3px; }
+/* Properties */
+.props{flex:1;overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:11px;}
+.prop{display:flex;flex-direction:column;gap:5px;}
+.plbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);}
+.pinput{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:7px 10px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;width:100%;transition:border-color .15s;}
+.pinput:focus{border-color:var(--blue);}
+.pselect{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:7px 10px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;width:100%;cursor:pointer;}
+.pselect:focus{border-color:var(--blue);}
+.swatches{display:flex;gap:5px;flex-wrap:wrap;}
+.sw{width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0;}
+.sw:hover{transform:scale(1.2);}
+.sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--blue);}
+.wbtns{display:flex;gap:5px;}
+.wbtn{flex:1;padding:6px 4px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);border-radius:5px;cursor:pointer;font-size:11px;font-weight:500;font-family:var(--font);transition:all .15s;text-align:center;}
+.wbtn.on{border-color:var(--blue);color:var(--blue);background:var(--bdim);}
+.wbtn:hover{border-color:var(--border2);}
+.toggle-row{display:flex;align-items:center;gap:8px;}
+.toggle-lbl{font-size:13px;color:var(--text);flex:1;}
+.toggle{width:36px;height:20px;background:var(--bg4);border-radius:10px;position:relative;cursor:pointer;border:1px solid var(--border2);transition:background .2s;}
+.toggle.on{background:var(--blue);border-color:var(--blue);}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.toggle.on::after{transform:translateX(16px);}
+.sep{height:1px;background:var(--border);margin:2px 0;}
+.delbtn{width:100%;padding:8px;background:var(--rdim);border:1px solid rgba(248,81,73,.3);border-radius:6px;color:var(--red);font-family:var(--font);font-size:13px;cursor:pointer;font-weight:500;transition:all .15s;}
+.delbtn:hover{background:rgba(248,81,73,.22);}
+.empty-insp{text-align:center;color:var(--text3);font-size:12px;padding:30px 10px;}
+.empty-insp .ei-ic{font-size:26px;margin-bottom:7px;}
 
-/* Input row */
-.add-row {
-  display: flex;
-  gap: 10px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  align-items: center;
-}
+/* Canvas area */
+.diag-main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.diag-top{height:50px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:9px;flex-shrink:0;}
+.diag-ttl-blk{flex:1;min-width:0;}
+.diag-site{font-size:15px;font-weight:700;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.diag-meta{font-size:11px;color:var(--text2);font-family:var(--mono);}
+.diag-area{flex:1;position:relative;overflow:hidden;background:#eef2f7;background-image:radial-gradient(circle,#b8c4d4 1px,transparent 1px);background-size:22px 22px;}
+#cvs{position:absolute;top:0;left:0;}
+.zoom-ctrls{position:absolute;bottom:14px;right:14px;display:flex;flex-direction:column;gap:3px;z-index:5;}
+.z-btn{width:30px;height:30px;background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;font-family:var(--mono);transition:all .15s;}
+.z-btn:hover{background:var(--bg3);}
+.zoom-lbl{position:absolute;bottom:14px;left:14px;background:var(--bg2);border:1px solid var(--border);padding:3px 9px;border-radius:5px;font-family:var(--mono);font-size:11px;color:var(--text2);}
+.hint-bar{background:var(--bg3);border-top:1px solid var(--border);padding:6px 14px;font-size:11px;color:var(--text3);font-family:var(--mono);display:flex;gap:14px;align-items:center;flex-shrink:0;overflow:hidden;}
+.hint{display:flex;align-items:center;gap:5px;}
+.kbd{background:var(--bg4);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;font-size:10px;color:var(--text2);}
+/* Snap indicator */
+.snap-on{color:var(--green);}
+/* Undo/redo counters */
+.undo-count{font-size:10px;color:var(--text3);margin-left:2px;font-family:var(--mono);}
 
-.add-row input {
-  flex: 1;
-  background: none;
-  border: none;
-  outline: none;
-  font-family: var(--font);
-  font-size: 14px;
-  color: var(--text);
-}
-.add-row input::placeholder { color: var(--text3); }
-
-/* Cards grid */
-.buildings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
-}
-
-.building-card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-}
-
-.building-card:hover {
-  border-color: var(--border2);
-  background: var(--bg3);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow);
-}
-
-.building-card.validated {
-  border-color: rgba(63,185,80,0.4);
-  background: linear-gradient(135deg, var(--bg2), rgba(63,185,80,0.03));
-}
-
-.building-card-header {
-  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
-}
-
-.building-icon {
-  width: 36px; height: 36px;
-  background: var(--blue-dim);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; flex-shrink: 0;
-}
-
-.building-card.validated .building-icon { background: var(--green-dim); }
-
-.building-info { flex: 1; min-width: 0; }
-.building-card-name { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.building-card-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
-
-.validated-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: var(--green-dim);
-  color: var(--green);
-  border: 1px solid rgba(63,185,80,0.3);
-  border-radius: 20px;
-  font-size: 11px; font-weight: 500;
-  padding: 2px 8px;
-}
-
-.building-equip-preview {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
-}
-
-.equip-chip {
-  display: flex; align-items: center; gap: 4px;
-  background: var(--bg4);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 3px 8px;
-  font-size: 12px; color: var(--text2);
-}
-
-.card-actions {
-  position: absolute; top: 10px; right: 10px;
-  display: flex; gap: 6px;
-  opacity: 0; transition: opacity 0.2s;
-}
-.building-card:hover .card-actions { opacity: 1; }
-
-.card-btn {
-  width: 26px; height: 26px;
-  border: 1px solid var(--border);
-  background: var(--bg3);
-  color: var(--text2);
-  border-radius: 5px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px;
-  transition: all 0.15s;
-}
-.card-btn:hover { border-color: var(--border2); color: var(--text); }
-.card-btn.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-dim); }
-
-.empty-state {
-  grid-column: 1/-1;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 60px 20px;
-  color: var(--text2);
-  gap: 12px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-}
-.empty-icon { font-size: 40px; opacity: 0.4; }
-.empty-text { font-size: 14px; font-weight: 500; color: var(--text2); }
-.empty-sub { font-size: 12px; color: var(--text3); }
-
-/* Bottom action bar */
-.action-bar {
-  background: var(--bg2);
-  border-top: 1px solid var(--border);
-  padding: 16px 32px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-shrink: 0;
-}
-
-.action-bar-info { font-size: 13px; color: var(--text2); }
-.action-bar-info strong { color: var(--text); }
-
-/* ── BUTTONS ── */
-.btn {
-  display: inline-flex; align-items: center; gap: 7px;
-  font-family: var(--font); font-size: 13px; font-weight: 500;
-  padding: 7px 14px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-
-.btn-primary {
-  background: var(--blue);
-  color: white;
-  border-color: var(--blue);
-}
-.btn-primary:hover { background: #388bfd; box-shadow: 0 0 0 3px var(--blue-glow); }
-
-.btn-secondary {
-  background: var(--bg4);
-  color: var(--text);
-  border-color: var(--border2);
-}
-.btn-secondary:hover { background: var(--bg3); border-color: var(--border2); }
-
-.btn-ghost {
-  background: transparent;
-  color: var(--text2);
-  border-color: transparent;
-}
-.btn-ghost:hover { background: var(--bg4); color: var(--text); }
-
-.btn-danger {
-  background: var(--red-dim);
-  color: var(--red);
-  border-color: rgba(248,81,73,0.3);
-}
-.btn-danger:hover { background: rgba(248,81,73,0.2); }
-
-.btn-success {
-  background: var(--green);
-  color: #0d1117;
-  border-color: var(--green);
-  font-weight: 600;
-}
-.btn-success:hover { background: #46c956; box-shadow: 0 0 0 3px rgba(63,185,80,0.25); }
-
-.btn-lg { padding: 9px 20px; font-size: 14px; border-radius: 7px; }
-.btn-icon { width: 32px; height: 32px; padding: 0; justify-content: center; }
-
-/* ── SCREEN 2 ── */
-#s2 { flex-direction: row; }
-
-.s2-sidebar {
-  width: 280px;
-  flex-shrink: 0;
-  background: var(--bg2);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.sidebar-header {
-  padding: 16px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.sidebar-title {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--text2);
-  margin-bottom: 12px;
-}
-
-.search-input {
-  width: 100%;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 7px 12px;
-  font-family: var(--font);
-  font-size: 13px;
-  color: var(--text);
-  outline: none;
-}
-.search-input:focus { border-color: var(--blue); }
-.search-input::placeholder { color: var(--text3); }
-
-.equip-categories {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.equip-category-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--text3);
-  padding: 8px 8px 4px;
-}
-
-.equip-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 9px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s;
-  border: 1px solid transparent;
-}
-.equip-item:hover {
-  background: var(--blue-dim);
-  border-color: rgba(47,129,247,0.2);
-}
-
-.equip-item-icon {
-  width: 36px; height: 36px;
-  flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-}
-
-.equip-item-icon svg { width:100%; height:100%; }
-
-.equip-item-info { min-width: 0; }
-.equip-item-name { font-size: 13px; font-weight: 500; color: var(--text); }
-.equip-item-desc { font-size: 11px; color: var(--text2); margin-top: 1px; }
-
-/* S2 Main */
-.s2-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.s2-topbar {
-  height: 52px;
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center;
-  padding: 0 20px; gap: 12px;
-  flex-shrink: 0;
-}
-
-.building-badge {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--blue-dim);
-  border: 1px solid rgba(47,129,247,0.3);
-  border-radius: 6px;
-  padding: 4px 12px;
-  font-size: 13px; font-weight: 600; color: var(--blue);
-}
-
-.s2-content {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.added-section-title {
-  font-size: 12px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.6px;
-  color: var(--text2);
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.added-equipment-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
-}
-
-.added-equip-card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
-  display: flex; align-items: center; gap: 12px;
-  position: relative;
-  animation: popIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
-}
-
-@keyframes popIn {
-  from { opacity:0; transform: scale(0.9); }
-  to { opacity:1; transform: scale(1); }
-}
-
-.added-equip-icon { width:32px; height:32px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
-.added-equip-icon svg { width:100%; height:100%; }
-.added-equip-name { font-size: 13px; font-weight: 500; flex: 1; }
-
-.remove-btn {
-  width: 22px; height: 22px;
-  border: 1px solid var(--border);
-  background: none;
-  color: var(--text3);
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px;
-  flex-shrink: 0;
-  transition: all 0.15s;
-  opacity: 0;
-}
-.added-equip-card:hover .remove-btn { opacity: 1; }
-.remove-btn:hover { background: var(--red-dim); color: var(--red); border-color: var(--red); }
-
-.s2-footer {
-  background: var(--bg2);
-  border-top: 1px solid var(--border);
-  padding: 14px 24px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-shrink: 0;
-}
-
-/* ── POPUP ── */
-.overlay {
-  position: fixed; inset: 0;
-  background: rgba(1,4,9,0.85);
-  backdrop-filter: blur(6px);
-  z-index: 1000;
-  display: none; align-items: center; justify-content: center;
-}
-.overlay.open { display: flex; animation: fadeIn 0.2s ease; }
-@keyframes fadeIn { from{opacity:0} to{opacity:1} }
-
-.modal {
-  background: var(--bg2);
-  border: 1px solid var(--border2);
-  border-radius: 12px;
-  padding: 28px;
-  width: 480px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
-  animation: slideUp 0.25s cubic-bezier(0.34,1.2,0.64,1);
-}
-@keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-
-.modal-header { margin-bottom: 20px; }
-.modal-title { font-size: 17px; font-weight: 700; }
-.modal-subtitle { font-size: 13px; color: var(--text2); margin-top: 4px; }
-
-.form-group { margin-bottom: 16px; }
-.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-.form-input {
-  width: 100%;
-  background: var(--bg3);
-  border: 1px solid var(--border2);
-  border-radius: 7px;
-  padding: 10px 14px;
-  font-family: var(--font); font-size: 14px;
-  color: var(--text); outline: none;
-  transition: border-color 0.15s;
-}
-.form-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
-.form-input::placeholder { color: var(--text3); }
-
-.modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:24px; }
-
-/* ── SCREEN 3 ── */
-#s3 { flex-direction: column; }
-
-.diagram-header {
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  padding: 14px 24px;
-  display: flex; align-items: center; gap: 16px;
-  flex-shrink: 0;
-}
-
-.diagram-title-block { flex: 1; }
-.diagram-site-name { font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
-.diagram-meta { font-size: 12px; color: var(--text2); margin-top: 2px; font-family: var(--mono); }
-
-.diagram-toolbar {
-  display: flex; gap: 8px;
-}
-
-.diagram-area {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  background: #f6f8fa;
-  background-image:
-    radial-gradient(circle, #c8d0dc 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-#diagramCanvas {
-  position: absolute;
-  top: 0; left: 0;
-  cursor: grab;
-}
-#diagramCanvas:active { cursor: grabbing; }
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-/* ── UTILS ── */
-.tag { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:500; }
-.tag-blue { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(47,129,247,0.2); }
-.tag-green { background:var(--green-dim); color:var(--green); border:1px solid rgba(63,185,80,0.2); }
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
 </style>
 </head>
 <body>
 <div class="app">
 
-  <!-- TOP BAR -->
-  <div class="topbar">
-    <div class="topbar-logo">
-      <div class="logo-icon">⬡</div>
-      NetSchema
-    </div>
-    <div class="topbar-sep"></div>
-    <div class="breadcrumb" id="breadcrumb">
-      <span class="active">Nouveau schéma</span>
-    </div>
-    <div class="topbar-right">
-      <span class="tag tag-blue" id="globalTag">0 bâtiment</span>
-    </div>
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-mark">⬡</div>NetSchema</div>
+  <div class="topbar-div"></div>
+  <span style="font-size:13px;color:var(--text2)" id="breadcrumb">Nouveau schéma</span>
+  <div class="topbar-r">
+    <span class="chip chip-blue" id="gTag">0 bâtiment</span>
   </div>
-
-  <!-- STEPS -->
-  <div class="steps">
-    <div class="step active" id="step1">
-      <div class="step-num">1</div>
-      Bâtiments &amp; équipements
-    </div>
-    <span class="step-sep">›</span>
-    <div class="step" id="step2">
-      <div class="step-num">2</div>
-      Nommer le site
-    </div>
-    <span class="step-sep">›</span>
-    <div class="step" id="step3">
-      <div class="step-num">3</div>
-      Schéma réseau
-    </div>
-  </div>
-
-  <!-- ===== SCREEN 1 ===== -->
-  <div class="screen active" id="s1">
-    <div class="s1-body">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Configurer les bâtiments</div>
-          <div class="page-subtitle">Ajoutez vos bâtiments puis cliquez sur chacun pour y ajouter les équipements réseau</div>
-        </div>
-      </div>
-
-      <div class="add-row">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text2);flex-shrink:0">
-          <path d="M2 13L6 9M10 5L14 1M1 8h14M8 1v14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        <input id="buildingInput" placeholder="Nom du bâtiment (ex : Usine principale, Labo R&D, Agence Paris...)" autocomplete="off"/>
-        <button class="btn btn-primary" onclick="addBuilding()">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          Ajouter
-        </button>
-      </div>
-
-      <div class="buildings-grid" id="buildingsGrid">
-        <div class="empty-state">
-          <div class="empty-icon">🏗️</div>
-          <div class="empty-text">Aucun bâtiment configuré</div>
-          <div class="empty-sub">Saisissez un nom ci-dessus et cliquez sur Ajouter</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="action-bar">
-      <div class="action-bar-info" id="s1Info">Aucun bâtiment ajouté</div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-secondary btn-lg" onclick="clearAll()" id="clearBtn" style="display:none">
-          Tout effacer
-        </button>
-        <button class="btn btn-primary btn-lg" onclick="openNamingModal()">
-          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1L9.5 5.5H14L10.5 8.5L11.5 13L7.5 10.5L3.5 13L4.5 8.5L1 5.5H5.5L7.5 1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-          Générer le schéma
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== SCREEN 2 ===== -->
-  <div class="screen" id="s2">
-    <!-- Sidebar bibliothèque -->
-    <div class="s2-sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-title">Bibliothèque d'équipements</div>
-        <input class="search-input" id="equipSearch" placeholder="Rechercher un équipement..." oninput="filterEquip(this.value)"/>
-      </div>
-      <div class="equip-categories" id="equipCategories"></div>
-    </div>
-
-    <!-- Main -->
-    <div class="s2-main">
-      <div class="s2-topbar">
-        <button class="btn btn-ghost" onclick="backToS1()">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Retour
-        </button>
-        <div class="building-badge" id="s2BuildingName">🏢 Bâtiment</div>
-        <div style="margin-left:auto;font-size:12px;color:var(--text2)">Cliquez sur un équipement pour l'ajouter</div>
-      </div>
-
-      <div class="s2-content">
-        <div class="added-section-title" id="addedTitle">Équipements ajoutés — 0</div>
-        <div class="added-equipment-grid" id="addedGrid">
-          <div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text3);font-size:13px;border:1px dashed var(--border);border-radius:8px">
-            Aucun équipement ajouté.<br>Sélectionnez des équipements dans la bibliothèque à gauche.
-          </div>
-        </div>
-      </div>
-
-      <div class="s2-footer">
-        <span class="tag tag-blue" id="s2CountTag">0 équipement</span>
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-danger" onclick="clearEquipment()">
-            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 1L12 12M1 12L12 1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            Vider
-          </button>
-          <button class="btn btn-success btn-lg" onclick="validateBuilding()">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7L5.5 10.5L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Valider le bâtiment
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== SCREEN 3 ===== -->
-  <div class="screen" id="s3">
-    <div class="diagram-header">
-      <div class="diagram-title-block">
-        <div class="diagram-site-name" id="diagramSiteName">—</div>
-        <div class="diagram-meta" id="diagramMeta">—</div>
-      </div>
-      <div class="diagram-toolbar">
-        <button class="btn btn-secondary" onclick="resetView()">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1a6 6 0 100 12A6 6 0 007 1zM7 4v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          Réinitialiser la vue
-        </button>
-        <button class="btn btn-secondary" onclick="goBackToS1()">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          Modifier
-        </button>
-        <button class="btn btn-primary" onclick="exportPNG()">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          Exporter PNG
-        </button>
-        <button class="btn btn-primary" onclick="exportPDF()">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 1h6l3 3v9H3V1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 1v3h3" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
-          Exporter PDF
-        </button>
-      </div>
-    </div>
-    <div class="diagram-area" id="diagramArea">
-      <canvas id="diagramCanvas"></canvas>
-    </div>
-  </div>
-
 </div>
 
-<!-- ===== MODAL NOMMAGE ===== -->
-<div class="overlay" id="namingModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Nommer le site réseau</div>
-      <div class="modal-subtitle">Ce nom apparaîtra comme titre du schéma généré</div>
+<!-- STEPS -->
+<div class="steps">
+  <div class="step active" id="stp1"><div class="step-n">1</div>Bâtiments &amp; équipements</div>
+  <span class="step-arr">›</span>
+  <div class="step" id="stp2"><div class="step-n">2</div>Nommer le site</div>
+  <span class="step-arr">›</span>
+  <div class="step" id="stp3"><div class="step-n">3</div>Éditeur de schéma</div>
+</div>
+
+<!-- ═══ S1 ═══ -->
+<div class="screen active" id="s1">
+  <div class="s1-body">
+    <div><div class="pg-title">Configurer les bâtiments</div><div class="pg-sub">Ajoutez vos bâtiments puis cliquez dessus pour ajouter les équipements réseau</div></div>
+    <div class="add-row">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" style="color:var(--text2);flex-shrink:0"><path d="M7.5 1v13M1 7.5h13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <input id="bldgIn" placeholder="Nom du bâtiment (ex : Usine, Labo R&D, Agence Paris...)" autocomplete="off"/>
+      <button class="btn btn-p" onclick="addBldg()">Ajouter</button>
     </div>
-    <div class="form-group">
-      <label class="form-label">Nom du site</label>
-      <input class="form-input" id="siteNameInput" placeholder="Ex : Site de Lyon, Siège Social Paris, Campus R&D..." autocomplete="off"/>
+    <div class="bldg-grid" id="bldgGrid">
+      <div class="empty-st"><div class="empty-ic">🏗️</div><span style="font-weight:500">Aucun bâtiment</span><span style="font-size:12px">Saisissez un nom et cliquez sur Ajouter</span></div>
     </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('namingModal')">Annuler</button>
-      <button class="btn btn-primary btn-lg" onclick="confirmGenerate()">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7.5 1L9.5 5.5H14L10.5 8.5L11.5 13L7.5 10.5L3.5 13L4.5 8.5L1 5.5H5.5L7.5 1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+  </div>
+  <div class="abar">
+    <div class="abar-info" id="s1Info">Aucun bâtiment</div>
+    <div style="display:flex;gap:9px">
+      <button class="btn btn-s btn-lg" onclick="clearAll()" id="clearBtn" style="display:none">Tout effacer</button>
+      <button class="btn btn-p btn-lg" onclick="openNaming()">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1L8 5H12.5L9 7.5L10 12L6.5 9.5L3 12L4 7.5L0.5 5H5L6.5 1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
         Générer le schéma
       </button>
     </div>
   </div>
 </div>
 
+<!-- ═══ S2 ═══ -->
+<div class="screen" id="s2">
+  <div class="s2-side">
+    <div class="side-hd">
+      <div class="side-ttl">Bibliothèque d'équipements</div>
+      <input class="srch" id="eqSrch" placeholder="Rechercher..." oninput="filterEq(this.value)"/>
+    </div>
+    <div class="eq-cats" id="eqCats"></div>
+  </div>
+  <div class="s2-main">
+    <div class="s2-top">
+      <button class="btn btn-g" onclick="goS1()">← Retour</button>
+      <div class="bldg-badge" id="s2Name">🏢 Bâtiment</div>
+      <div style="margin-left:auto;font-size:12px;color:var(--text2)">Cliquez sur un équipement pour l'ajouter</div>
+    </div>
+    <div class="s2-content">
+      <div class="sec-ttl" id="addedTtl">Équipements ajoutés — 0</div>
+      <div class="added-grid" id="addedGrid">
+        <div style="grid-column:1/-1;padding:36px;text-align:center;color:var(--text3);font-size:13px;border:1px dashed var(--border);border-radius:7px">Sélectionnez des équipements à gauche</div>
+      </div>
+    </div>
+    <div class="s2-foot">
+      <span class="chip chip-blue" id="s2cnt">0 équipement</span>
+      <div style="display:flex;gap:9px">
+        <button class="btn btn-d" onclick="clearEq()">Vider</button>
+        <button class="btn btn-ok btn-lg" onclick="validateBldg()">✓ Valider le bâtiment</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ S3 — DIAGRAM EDITOR ═══ -->
+<div class="screen" id="s3">
+
+  <!-- INSPECTOR -->
+  <div class="insp">
+
+    <!-- Tools -->
+    <div class="insp-section">
+      <div class="insp-ttl">Mode d'édition</div>
+      <div class="tools-row">
+        <button class="tool on" id="toolSel" onclick="setTool('sel')" title="Déplacer les nœuds">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 3.5-4.5 1L4 11z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          Sélection
+        </button>
+        <button class="tool" id="toolConn" onclick="setTool('conn')" title="Cliquer 2 nœuds">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="2.5" cy="2.5" r="1.8" stroke="currentColor" stroke-width="1.2"/><circle cx="9.5" cy="9.5" r="1.8" stroke="currentColor" stroke-width="1.2"/><path d="M3.8 3.8l4.4 4.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          Connecter
+        </button>
+        <button class="tool" id="toolDel" onclick="setTool('del')" title="Cliquer un lien pour le supprimer">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Supr. lien
+        </button>
+      </div>
+    </div>
+
+    <!-- Snap + Undo -->
+    <div class="insp-section" style="display:flex;align-items:center;gap:8px;padding:10px 13px;">
+      <div class="toggle-row" style="flex:1">
+        <span class="toggle-lbl" style="font-size:12px">Grille magnétique</span>
+        <div class="toggle on" id="snapToggle" onclick="toggleSnap()"></div>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-s btn-ic" onclick="undo()" title="Annuler (Ctrl+Z)" id="undoBtn">↩</button>
+        <button class="btn btn-s btn-ic" onclick="redo()" title="Rétablir (Ctrl+Y)" id="redoBtn">↪</button>
+      </div>
+    </div>
+
+    <!-- Default style -->
+    <div class="insp-section">
+      <div class="insp-ttl">Style par défaut (nouveaux liens)</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="prop">
+          <div class="plbl">Couleur</div>
+          <div class="swatches" id="defSwatches"></div>
+        </div>
+        <div class="prop">
+          <div class="plbl">Ligne</div>
+          <select class="pselect" id="defStyle" onchange="defCfg.style=this.value">
+            <option value="solid">Solide ────</option>
+            <option value="dashed" selected>Pointillés ╌╌</option>
+            <option value="dotted">Pointés ·····</option>
+          </select>
+        </div>
+        <div class="prop">
+          <div class="plbl">Épaisseur</div>
+          <div class="wbtns">
+            <button class="wbtn" id="dw1" onclick="setDW(1)">Fin</button>
+            <button class="wbtn on" id="dw2" onclick="setDW(2)">Moyen</button>
+            <button class="wbtn" id="dw3" onclick="setDW(3)">Épais</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inspector panel -->
+    <div class="props" id="propsPanel">
+      <div class="empty-insp"><div class="ei-ic">🔗</div>Sélectionnez un lien<br>pour le personnaliser</div>
+    </div>
+
+  </div>
+
+  <!-- CANVAS -->
+  <div class="diag-main">
+    <div class="diag-top">
+      <div class="diag-ttl-blk">
+        <div class="diag-site" id="dgSite">—</div>
+        <div class="diag-meta" id="dgMeta">—</div>
+      </div>
+      <button class="btn btn-s" onclick="autoLayout()" title="Réorganiser automatiquement">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="4" height="4" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="1" width="4" height="4" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="4.5" y="8" width="4" height="4" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M3 5v2.5h6.5V5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" fill="none"/></svg>
+        Auto-layout
+      </button>
+      <button class="btn btn-s" onclick="fitView()" title="Centrer la vue">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.2"/><circle cx="6.5" cy="6.5" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+        Centrer
+      </button>
+      <button class="btn btn-s" onclick="goS1()">← Modifier</button>
+      <button class="btn btn-s" onclick="exportPNG()">↓ PNG</button>
+      <button class="btn btn-p" onclick="exportPDF()">↓ PDF</button>
+    </div>
+
+    <div class="diag-area" id="diagArea">
+      <canvas id="cvs"></canvas>
+      <div class="zoom-ctrls">
+        <button class="z-btn" onclick="zoomIn()">+</button>
+        <button class="z-btn" onclick="zoomOut()">−</button>
+        <button class="z-btn" onclick="fitView()" style="font-size:13px">⊙</button>
+      </div>
+      <div class="zoom-lbl" id="zlbl">100%</div>
+    </div>
+
+    <div class="hint-bar">
+      <div class="hint"><span class="kbd">Sélection</span> Glisser les nœuds</div>
+      <div class="hint"><span class="kbd">Connecter</span> Clic → Clic</div>
+      <div class="hint"><span class="kbd">Clic droit</span> Pan</div>
+      <div class="hint"><span class="kbd">Molette</span> Zoom</div>
+      <div class="hint"><span class="kbd">Ctrl+Z/Y</span> Annuler/Rétablir</div>
+      <div class="hint" id="snapHint"><span class="kbd snap-on">Grille 20px</span> <span class="snap-on">✓ Activée</span></div>
+    </div>
+  </div>
+
+</div>
+</div><!-- .app -->
+
+<!-- NAMING MODAL -->
+<div class="overlay" id="nmModal">
+  <div class="modal">
+    <div class="modal-ttl">Nommer le site réseau</div>
+    <div class="modal-sub">Ce nom apparaîtra en titre du schéma final</div>
+    <div class="fg">
+      <label class="fl">Nom du site</label>
+      <input class="fi" id="siteIn" placeholder="Ex : Site de Lyon, Siège Social Paris, Campus R&D..."/>
+    </div>
+    <div class="modal-acts">
+      <button class="btn btn-s" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-p btn-lg" onclick="confirmGen()">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1L8 5H12.5L9 7.5L10 12L6.5 9.5L3 12L4 7.5L0.5 5H5L6.5 1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        Générer →
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ═══════════════════════════════════════════════
-// SVG ICONS FOR NETWORK EQUIPMENT
-// ═══════════════════════════════════════════════
-const ICONS = {
-  router: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="18" width="40" height="12" rx="3" fill="#1a73e8" stroke="#1557b0" stroke-width="1.5"/>
-    <circle cx="12" cy="24" r="2.5" fill="white"/>
-    <circle cx="20" cy="24" r="2.5" fill="white"/>
-    <circle cx="28" cy="24" r="2.5" fill="#4fc3f7"/>
-    <circle cx="36" cy="24" r="2.5" fill="#81c995"/>
-    <rect x="22" y="30" width="4" height="6" fill="#1a73e8"/>
-    <path d="M14 36h20" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"/>
-    <path d="M14 12c0 0 5-5 10-5s10 5 10 5" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" fill="none"/>
-    <path d="M18 14c0 0 3-3 6-3s6 3 6 3" stroke="#4fc3f7" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-  </svg>`,
-
-  switch: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="16" width="40" height="16" rx="3" fill="#0d47a1" stroke="#0a3270" stroke-width="1.5"/>
-    <rect x="8" y="20" width="4" height="8" rx="1" fill="#42a5f5"/>
-    <rect x="14" y="20" width="4" height="8" rx="1" fill="#42a5f5"/>
-    <rect x="20" y="20" width="4" height="8" rx="1" fill="#42a5f5"/>
-    <rect x="26" y="20" width="4" height="8" rx="1" fill="#81c995"/>
-    <rect x="32" y="20" width="4" height="8" rx="1" fill="#81c995"/>
-    <circle cx="40" cy="24" r="2" fill="#81c995"/>
-    <rect x="10" y="32" width="3" height="5" fill="#0d47a1"/>
-    <rect x="22" y="32" width="3" height="5" fill="#0d47a1"/>
-    <rect x="34" y="32" width="3" height="5" fill="#0d47a1"/>
-  </svg>`,
-
-  firewall: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M24 4L40 12V26C40 34 32 40 24 44C16 40 8 34 8 26V12L24 4Z" fill="#c62828" stroke="#8b1a1a" stroke-width="1.5"/>
-    <path d="M24 4L36 11V25C36 31.5 30 36.5 24 40C18 36.5 12 31.5 12 25V11L24 4Z" fill="#ef5350"/>
-    <path d="M20 28C20 26 22 24 24 22C26 24 28 26 28 28C28 30 26 32 24 32C22 32 20 30 20 28Z" fill="white"/>
-    <path d="M24 16V22" stroke="white" stroke-width="2" stroke-linecap="round"/>
-    <path d="M18 20C19 17 21.5 15 24 14C26.5 15 29 17 30 20" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-  </svg>`,
-
-  server: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="8" y="6" width="32" height="10" rx="2" fill="#37474f" stroke="#263238" stroke-width="1.2"/>
-    <rect x="8" y="19" width="32" height="10" rx="2" fill="#37474f" stroke="#263238" stroke-width="1.2"/>
-    <rect x="8" y="32" width="32" height="10" rx="2" fill="#37474f" stroke="#263238" stroke-width="1.2"/>
-    <circle cx="14" cy="11" r="2" fill="#81c995"/>
-    <circle cx="20" cy="11" r="2" fill="#f9ab00"/>
-    <rect x="26" y="9" width="10" height="4" rx="1" fill="#546e7a"/>
-    <circle cx="14" cy="24" r="2" fill="#81c995"/>
-    <circle cx="20" cy="24" r="2" fill="#81c995"/>
-    <rect x="26" y="22" width="10" height="4" rx="1" fill="#546e7a"/>
-    <circle cx="14" cy="37" r="2" fill="#f9ab00"/>
-    <circle cx="20" cy="37" r="2" fill="#81c995"/>
-    <rect x="26" y="35" width="10" height="4" rx="1" fill="#546e7a"/>
-  </svg>`,
-
-  wifi: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8 20C13 14 20 10 24 10C28 10 35 14 40 20" stroke="#1a73e8" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-    <path d="M13 26C16.5 22 20 19 24 19C28 19 31.5 22 35 26" stroke="#1a73e8" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-    <path d="M18 32C20 29.5 22 28 24 28C26 28 28 29.5 30 32" stroke="#1a73e8" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-    <circle cx="24" cy="37" r="3" fill="#1a73e8"/>
-    <rect x="4" y="40" width="40" height="4" rx="2" fill="#e8f0fe"/>
-    <rect x="20" y="36" width="8" height="4" fill="#1a73e8"/>
-  </svg>`,
-
-  pc: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="6" width="40" height="28" rx="3" fill="#455a64" stroke="#263238" stroke-width="1.5"/>
-    <rect x="7" y="9" width="34" height="22" rx="1.5" fill="#b0bec5"/>
-    <rect x="9" y="11" width="30" height="18" fill="#eceff1"/>
-    <rect x="11" y="13" width="18" height="12" rx="1" fill="#90a4ae"/>
-    <rect x="32" y="13" width="5" height="5" rx="0.5" fill="#b0bec5"/>
-    <rect x="32" y="20" width="5" height="5" rx="0.5" fill="#b0bec5"/>
-    <rect x="18" y="34" width="12" height="4" fill="#455a64"/>
-    <rect x="12" y="38" width="24" height="3" rx="1.5" fill="#37474f"/>
-  </svg>`,
-
-  printer: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="10" y="6" width="28" height="14" rx="2" fill="#78909c" stroke="#546e7a" stroke-width="1.2"/>
-    <rect x="6" y="18" width="36" height="18" rx="3" fill="#546e7a" stroke="#37474f" stroke-width="1.5"/>
-    <rect x="12" y="30" width="24" height="14" rx="2" fill="#eceff1" stroke="#b0bec5" stroke-width="1"/>
-    <rect x="14" y="33" width="10" height="2" rx="1" fill="#90a4ae"/>
-    <rect x="14" y="37" width="16" height="2" rx="1" fill="#90a4ae"/>
-    <circle cx="34" cy="26" r="2.5" fill="#81c995"/>
-    <rect x="10" y="20" width="8" height="6" rx="1" fill="#78909c"/>
-  </svg>`,
-
-  cloud: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M36 34H14C10 34 7 31 7 27C7 23.5 9.5 20.5 13 20C13 14 17.5 10 23 10C28 10 32 13.5 33 18.5C36.5 19 40 22 40 26C40 30.5 38.5 34 36 34Z" fill="#90caf9" stroke="#1a73e8" stroke-width="1.5"/>
-    <path d="M20 28L24 32L28 28" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <path d="M24 20v12" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"/>
-    <rect x="10" y="36" width="28" height="4" rx="2" fill="#e8f0fe"/>
-    <rect x="16" y="34" width="4" height="2" fill="#90caf9"/>
-    <rect x="28" y="34" width="4" height="2" fill="#90caf9"/>
-  </svg>`,
-
-  nas: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="8" y="4" width="32" height="40" rx="3" fill="#37474f" stroke="#263238" stroke-width="1.5"/>
-    <rect x="12" y="10" width="24" height="7" rx="1.5" fill="#546e7a"/>
-    <circle cx="32" cy="13.5" r="2" fill="#81c995"/>
-    <rect x="14" y="11.5" width="12" height="4" rx="0.5" fill="#37474f"/>
-    <rect x="12" y="21" width="24" height="7" rx="1.5" fill="#546e7a"/>
-    <circle cx="32" cy="24.5" r="2" fill="#81c995"/>
-    <rect x="14" y="22.5" width="12" height="4" rx="0.5" fill="#37474f"/>
-    <rect x="12" y="32" width="24" height="7" rx="1.5" fill="#546e7a"/>
-    <circle cx="32" cy="35.5" r="2" fill="#f9ab00"/>
-    <rect x="14" y="33.5" width="12" height="4" rx="0.5" fill="#37474f"/>
-  </svg>`,
-
-  camera: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="6" y="16" width="28" height="20" rx="3" fill="#546e7a" stroke="#37474f" stroke-width="1.5"/>
-    <circle cx="20" cy="26" r="7" fill="#37474f" stroke="#263238" stroke-width="1.5"/>
-    <circle cx="20" cy="26" r="4.5" fill="#78909c"/>
-    <circle cx="20" cy="26" r="2" fill="#263238"/>
-    <circle cx="21.5" cy="24.5" r="0.8" fill="white" opacity="0.6"/>
-    <polygon points="34,20 44,16 44,36 34,32" fill="#455a64" stroke="#37474f" stroke-width="1.2"/>
-    <rect x="8" y="18" width="6" height="3" rx="1" fill="#81c995"/>
-  </svg>`,
-
-  phone: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="8" y="4" width="22" height="30" rx="3" fill="#1a73e8" stroke="#1557b0" stroke-width="1.5"/>
-    <rect x="10" y="8" width="18" height="18" rx="1" fill="#e8f0fe"/>
-    <rect x="12" y="10" width="14" height="10" fill="#90caf9"/>
-    <rect x="8" y="34" width="22" height="10" rx="2" fill="#37474f"/>
-    <circle cx="12" cy="39" r="1.5" fill="#546e7a"/>
-    <circle cx="19" cy="39" r="1.5" fill="#546e7a"/>
-    <circle cx="26" cy="39" r="1.5" fill="#546e7a"/>
-    <rect x="30" y="14" width="10" height="6" rx="1" fill="#e8f0fe" stroke="#90a4ae" stroke-width="1"/>
-    <rect x="32" y="16" width="6" height="2" rx="0.5" fill="#90a4ae"/>
-  </svg>`,
-
-  ups: `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="8" y="8" width="32" height="32" rx="3" fill="#37474f" stroke="#263238" stroke-width="1.5"/>
-    <rect x="12" y="12" width="24" height="14" rx="2" fill="#546e7a"/>
-    <path d="M22 15L18 23h5l-3 8 8-10h-5l3-6z" fill="#f9ab00"/>
-    <rect x="12" y="30" width="8" height="4" rx="1" fill="#78909c"/>
-    <rect x="22" y="30" width="8" height="4" rx="1" fill="#78909c"/>
-    <circle cx="34" cy="32" r="2" fill="#81c995"/>
-  </svg>`,
+// ═══════════════════════════════════════════════════
+// SVG ICON LIBRARY
+// ═══════════════════════════════════════════════════
+const ICONS={
+router:`<svg viewBox="0 0 48 48" fill="none"><rect x="4" y="18" width="40" height="12" rx="3" fill="#1a73e8" stroke="#1557b0" stroke-width="1.5"/><circle cx="12" cy="24" r="2.5" fill="white"/><circle cx="20" cy="24" r="2.5" fill="white"/><circle cx="28" cy="24" r="2.5" fill="#4fc3f7"/><circle cx="36" cy="24" r="2.5" fill="#81c995"/><rect x="22" y="30" width="4" height="6" fill="#1a73e8"/><path d="M14 36h20" stroke="#1a73e8" stroke-width="2" stroke-linecap="round"/><path d="M14 12c0 0 5-5 10-5s10 5 10 5" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M18 14c0 0 3-3 6-3s6 3 6 3" stroke="#4fc3f7" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
+switch:`<svg viewBox="0 0 48 48" fill="none"><rect x="4" y="16" width="40" height="16" rx="3" fill="#0d47a1" stroke="#0a3270" stroke-width="1.5"/><rect x="8" y="20" width="4" height="8" rx="1" fill="#42a5f5"/><rect x="14" y="20" width="4" height="8" rx="1" fill="#42a5f5"/><rect x="20" y="20" width="4" height="8" rx="1" fill="#42a5f5"/><rect x="26" y="20" width="4" height="8" rx="1" fill="#81c995"/><rect x="32" y="20" width="4" height="8" rx="1" fill="#81c995"/><circle cx="40" cy="24" r="2" fill="#81c995"/><rect x="10" y="32" width="3" height="5" fill="#0d47a1"/><rect x="22" y="32" width="3" height="5" fill="#0d47a1"/><rect x="34" y="32" width="3" height="5" fill="#0d47a1"/></svg>`,
+firewall:`<svg viewBox="0 0 48 48" fill="none"><path d="M24 4L40 12V26C40 34 32 40 24 44C16 40 8 34 8 26V12L24 4Z" fill="#c62828" stroke="#8b1a1a" stroke-width="1.5"/><path d="M24 4L36 11V25C36 31.5 30 36.5 24 40C18 36.5 12 31.5 12 25V11L24 4Z" fill="#ef5350"/><path d="M20 28C20 26 22 24 24 22C26 24 28 26 28 28C28 30 26 32 24 32C22 32 20 30 20 28Z" fill="white"/><path d="M24 16V22" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>`,
+server:`<svg viewBox="0 0 48 48" fill="none"><rect x="8" y="6" width="32" height="10" rx="2" fill="#37474f" stroke="#263238" stroke-width="1.2"/><rect x="8" y="19" width="32" height="10" rx="2" fill="#37474f" stroke="#263238" stroke-width="1.2"/><rect x="8" y="32" width="32" height="10" rx="2" fill="#37474f" stroke="#263238" stroke-width="1.2"/><circle cx="14" cy="11" r="2" fill="#81c995"/><circle cx="20" cy="11" r="2" fill="#f9ab00"/><rect x="26" y="9" width="10" height="4" rx="1" fill="#546e7a"/><circle cx="14" cy="24" r="2" fill="#81c995"/><circle cx="20" cy="24" r="2" fill="#81c995"/><rect x="26" y="22" width="10" height="4" rx="1" fill="#546e7a"/><circle cx="14" cy="37" r="2" fill="#f9ab00"/><circle cx="20" cy="37" r="2" fill="#81c995"/><rect x="26" y="35" width="10" height="4" rx="1" fill="#546e7a"/></svg>`,
+wifi:`<svg viewBox="0 0 48 48" fill="none"><path d="M8 20C13 14 20 10 24 10C28 10 35 14 40 20" stroke="#1a73e8" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M13 26C16.5 22 20 19 24 19C28 19 31.5 22 35 26" stroke="#1a73e8" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M18 32C20 29.5 22 28 24 28C26 28 28 29.5 30 32" stroke="#1a73e8" stroke-width="2.5" stroke-linecap="round" fill="none"/><circle cx="24" cy="37" r="3" fill="#1a73e8"/><rect x="4" y="40" width="40" height="4" rx="2" fill="#e8f0fe"/><rect x="20" y="36" width="8" height="4" fill="#1a73e8"/></svg>`,
+pc:`<svg viewBox="0 0 48 48" fill="none"><rect x="4" y="6" width="40" height="28" rx="3" fill="#455a64" stroke="#263238" stroke-width="1.5"/><rect x="7" y="9" width="34" height="22" rx="1.5" fill="#b0bec5"/><rect x="9" y="11" width="30" height="18" fill="#eceff1"/><rect x="11" y="13" width="18" height="12" rx="1" fill="#90a4ae"/><rect x="32" y="13" width="5" height="5" rx="0.5" fill="#b0bec5"/><rect x="32" y="20" width="5" height="5" rx="0.5" fill="#b0bec5"/><rect x="18" y="34" width="12" height="4" fill="#455a64"/><rect x="12" y="38" width="24" height="3" rx="1.5" fill="#37474f"/></svg>`,
+printer:`<svg viewBox="0 0 48 48" fill="none"><rect x="10" y="6" width="28" height="14" rx="2" fill="#78909c" stroke="#546e7a" stroke-width="1.2"/><rect x="6" y="18" width="36" height="18" rx="3" fill="#546e7a" stroke="#37474f" stroke-width="1.5"/><rect x="12" y="30" width="24" height="14" rx="2" fill="#eceff1" stroke="#b0bec5" stroke-width="1"/><rect x="14" y="33" width="10" height="2" rx="1" fill="#90a4ae"/><rect x="14" y="37" width="16" height="2" rx="1" fill="#90a4ae"/><circle cx="34" cy="26" r="2.5" fill="#81c995"/></svg>`,
+cloud:`<svg viewBox="0 0 48 48" fill="none"><path d="M36 34H14C10 34 7 31 7 27C7 23.5 9.5 20.5 13 20C13 14 17.5 10 23 10C28 10 32 13.5 33 18.5C36.5 19 40 22 40 26C40 30.5 38.5 34 36 34Z" fill="#90caf9" stroke="#1a73e8" stroke-width="1.5"/><path d="M20 28L24 32L28 28M24 20v12" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`,
+nas:`<svg viewBox="0 0 48 48" fill="none"><rect x="8" y="4" width="32" height="40" rx="3" fill="#37474f" stroke="#263238" stroke-width="1.5"/><rect x="12" y="10" width="24" height="7" rx="1.5" fill="#546e7a"/><circle cx="32" cy="13.5" r="2" fill="#81c995"/><rect x="14" y="11.5" width="12" height="4" rx="0.5" fill="#37474f"/><rect x="12" y="21" width="24" height="7" rx="1.5" fill="#546e7a"/><circle cx="32" cy="24.5" r="2" fill="#81c995"/><rect x="12" y="32" width="24" height="7" rx="1.5" fill="#546e7a"/><circle cx="32" cy="35.5" r="2" fill="#f9ab00"/></svg>`,
+camera:`<svg viewBox="0 0 48 48" fill="none"><rect x="6" y="16" width="28" height="20" rx="3" fill="#546e7a" stroke="#37474f" stroke-width="1.5"/><circle cx="20" cy="26" r="7" fill="#37474f" stroke="#263238" stroke-width="1.5"/><circle cx="20" cy="26" r="4.5" fill="#78909c"/><circle cx="20" cy="26" r="2" fill="#263238"/><polygon points="34,20 44,16 44,36 34,32" fill="#455a64" stroke="#37474f" stroke-width="1.2"/><rect x="8" y="18" width="6" height="3" rx="1" fill="#81c995"/></svg>`,
+phone:`<svg viewBox="0 0 48 48" fill="none"><rect x="8" y="4" width="22" height="30" rx="3" fill="#1a73e8" stroke="#1557b0" stroke-width="1.5"/><rect x="10" y="8" width="18" height="18" rx="1" fill="#e8f0fe"/><rect x="12" y="10" width="14" height="10" fill="#90caf9"/><rect x="8" y="34" width="22" height="10" rx="2" fill="#37474f"/></svg>`,
+ups:`<svg viewBox="0 0 48 48" fill="none"><rect x="8" y="8" width="32" height="32" rx="3" fill="#37474f" stroke="#263238" stroke-width="1.5"/><rect x="12" y="12" width="24" height="14" rx="2" fill="#546e7a"/><path d="M22 15L18 23h5l-3 8 8-10h-5l3-6z" fill="#f9ab00"/><rect x="12" y="30" width="8" height="4" rx="1" fill="#78909c"/><rect x="22" y="30" width="8" height="4" rx="1" fill="#78909c"/></svg>`,
 };
 
-const EQUIPMENT_CATALOG = [
-  { cat:'Réseau', items:[
-    { id:'router',   name:'Routeur',       desc:'Routeur principal',       icon:'router'  },
-    { id:'switch',   name:'Switch',        desc:'Commutateur réseau',      icon:'switch'  },
-    { id:'firewall', name:'Firewall',       desc:'Pare-feu',                icon:'firewall'},
-    { id:'wifi',     name:'Borne WiFi',     desc:'Point d\'accès sans fil', icon:'wifi'    },
-    { id:'cloud',    name:'Cloud / Internet',desc:'Connexion WAN/Internet', icon:'cloud'   },
+const CATALOG=[
+  {cat:'Réseau',items:[
+    {id:'router',name:'Routeur',desc:'Routeur / Passerelle',icon:'router'},
+    {id:'switch',name:'Switch',desc:'Commutateur réseau',icon:'switch'},
+    {id:'firewall',name:'Firewall',desc:'Pare-feu/sécurité',icon:'firewall'},
+    {id:'wifi',name:'Borne WiFi',desc:'Point d\'accès sans fil',icon:'wifi'},
+    {id:'cloud',name:'Cloud / Internet',desc:'Connexion WAN',icon:'cloud'},
   ]},
-  { cat:'Serveurs & Stockage', items:[
-    { id:'server',   name:'Serveur',        desc:'Serveur physique/virtuel',icon:'server'  },
-    { id:'nas',      name:'NAS',            desc:'Stockage réseau',         icon:'nas'     },
-    { id:'ups',      name:'Onduleur (UPS)', desc:'Alimentation secourue',   icon:'ups'     },
+  {cat:'Serveurs & Stockage',items:[
+    {id:'server',name:'Serveur',desc:'Serveur physique/virtuel',icon:'server'},
+    {id:'nas',name:'NAS',desc:'Stockage réseau',icon:'nas'},
+    {id:'ups',name:'Onduleur UPS',desc:'Alimentation secourue',icon:'ups'},
   ]},
-  { cat:'Postes & Périphériques', items:[
-    { id:'pc',       name:'Poste PC',       desc:'Ordinateur de bureau',    icon:'pc'      },
-    { id:'printer',  name:'Imprimante',     desc:'Imprimante réseau',       icon:'printer' },
-    { id:'phone',    name:'Téléphone IP',   desc:'Téléphonie sur IP',       icon:'phone'   },
-    { id:'camera',   name:'Caméra IP',      desc:'Vidéosurveillance',       icon:'camera'  },
+  {cat:'Postes & Périphériques',items:[
+    {id:'pc',name:'Poste PC',desc:'Ordinateur de bureau',icon:'pc'},
+    {id:'printer',name:'Imprimante',desc:'Imprimante réseau',icon:'printer'},
+    {id:'phone',name:'Téléphone IP',desc:'Téléphonie VoIP',icon:'phone'},
+    {id:'camera',name:'Caméra IP',desc:'Vidéosurveillance',icon:'camera'},
   ]},
 ];
 
-// ═══════════════════════════════════════════════
+const CONN_COLORS=['#64748b','#2f81f7','#3fb950','#f85149','#e3b341','#a371f7','#ec4899','#22d3ee','#fb923c','#f97316'];
+
+// ═══════════════════════════════════════════════════
 // STATE
-// ═══════════════════════════════════════════════
-let buildings = [];
-let currentBuildingId = null;
-let siteName = '';
+// ═══════════════════════════════════════════════════
+let buildings=[], curBldgId=null, siteName='';
 
-// Diagram pan/zoom
-let panX = 0, panY = 0, scale = 1;
-let isPanning = false, lastMX = 0, lastMY = 0;
+// Diagram
+let nodes=[], edges=[], selEdge=null, selNode=null;
+let connFrom=null;   // node being connected from
+let mouseWorld={x:0,y:0}; // live mouse pos in world coords
 
-// ═══════════════════════════════════════════════
+let tool='sel';
+let snapEnabled=true;
+const SNAP=20;
+
+// Canvas transform
+let tx=0, ty=0, sc=1;
+let isPan=false, isDrag=false;
+let dragNode=null, dragOX=0, dragOY=0;
+let pmx=0, pmy=0;
+
+// Default edge config
+const defCfg={color:'#64748b', style:'dashed', width:2};
+
+// Undo stack
+let history=[], histIdx=-1;
+
+// Icon cache
+const icCache={};
+
+// Node dimensions
+const NW=188, NHdr=44, NEQ=32, NPAD=11;
+
+// ═══════════════════════════════════════════════════
 // INIT
-// ═══════════════════════════════════════════════
-function init() {
-  renderEquipCatalog();
-  document.getElementById('buildingInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addBuilding();
-  });
-  document.getElementById('siteNameInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') confirmGenerate();
-    if (e.key === 'Escape') closeModal('namingModal');
-  });
+// ═══════════════════════════════════════════════════
+function init(){
+  renderCatalog();
+  renderDefSwatches();
+  document.getElementById('bldgIn').addEventListener('keydown',e=>{if(e.key==='Enter')addBldg();});
+  document.getElementById('siteIn').addEventListener('keydown',e=>{if(e.key==='Enter')confirmGen();if(e.key==='Escape')closeModal();});
+  document.getElementById('nmModal').addEventListener('click',e=>{if(e.target===document.getElementById('nmModal'))closeModal();});
+  document.addEventListener('keydown',onKeyDown);
 }
 
-// ═══════════════════════════════════════════════
-// SCREEN NAVIGATION
-// ═══════════════════════════════════════════════
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  updateSteps(id);
-}
-
-function updateSteps(screenId) {
-  const map = { s1:1, s2:1, s3:3 };
-  const cur = map[screenId] || 1;
-  [1,2,3].forEach(n => {
-    const el = document.getElementById('step'+n);
-    el.classList.remove('active','done');
-    if (n < cur) el.classList.add('done');
-    else if (n === cur) el.classList.add('active');
-  });
-}
-
-function backToS1() { showScreen('s1'); renderBuildings(); }
-function goBackToS1() { showScreen('s1'); renderBuildings(); updateSteps('s1'); }
-
-// ═══════════════════════════════════════════════
-// SCREEN 1 — BUILDINGS
-// ═══════════════════════════════════════════════
-function addBuilding() {
-  const input = document.getElementById('buildingInput');
-  const name = input.value.trim();
-  if (!name) return;
-  buildings.push({ id: Date.now(), name, equipment: [], validated: false });
-  input.value = '';
-  input.focus();
-  renderBuildings();
-}
-
-function deleteBuilding(id, e) {
-  e.stopPropagation();
-  buildings = buildings.filter(b => b.id !== id);
-  renderBuildings();
-}
-
-function editBuilding(id, e) {
-  e.stopPropagation();
-  currentBuildingId = id;
-  const b = buildings.find(b => b.id === id);
-  document.getElementById('s2BuildingName').textContent = '🏢 ' + b.name;
-  renderAddedGrid();
-  showScreen('s2');
-}
-
-function renderBuildings() {
-  const grid = document.getElementById('buildingsGrid');
-  const total = buildings.reduce((s,b) => s + b.equipment.length, 0);
-
-  document.getElementById('globalTag').textContent = buildings.length + ' bâtiment' + (buildings.length !== 1 ? 's' : '');
-  document.getElementById('clearBtn').style.display = buildings.length ? 'flex' : 'none';
-
-  if (!buildings.length) {
-    grid.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">🏗️</div>
-      <div class="empty-text">Aucun bâtiment configuré</div>
-      <div class="empty-sub">Saisissez un nom ci-dessus et cliquez sur Ajouter</div>
-    </div>`;
-    document.getElementById('s1Info').innerHTML = 'Aucun bâtiment ajouté';
-    return;
+// ═══════════════════════════════════════════════════
+// KEYBOARD
+// ═══════════════════════════════════════════════════
+function onKeyDown(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){e.preventDefault();undo();return;}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.key==='z'&&e.shiftKey))){e.preventDefault();redo();return;}
+  if(e.key==='Escape'){ connFrom=null; redraw(); }
+  if((e.key==='Delete'||e.key==='Backspace')&&selEdge&&document.activeElement.tagName!=='INPUT'){
+    deleteEdge(selEdge.id); return;
   }
+}
 
-  const validated = buildings.filter(b => b.validated).length;
-  document.getElementById('s1Info').innerHTML =
-    `<strong>${buildings.length}</strong> bâtiment${buildings.length!==1?'s':''} · <strong>${total}</strong> équipement${total!==1?'s':''} · ${validated} validé${validated!==1?'s':''}`;
+// ═══════════════════════════════════════════════════
+// UNDO / REDO
+// ═══════════════════════════════════════════════════
+function snapshot(){
+  const state=JSON.stringify({nodes,edges});
+  history=history.slice(0,histIdx+1);
+  history.push(state);
+  if(history.length>50) history.shift();
+  histIdx=history.length-1;
+}
 
-  grid.innerHTML = buildings.map(b => {
-    const preview = b.equipment.slice(0,5).map(e =>
-      `<div class="equip-chip">${svgToImgTag(ICONS[e.icon], 16)} ${e.name}</div>`
-    ).join('') + (b.equipment.length > 5 ? `<div class="equip-chip">+${b.equipment.length-5}</div>` : '');
+function undo(){
+  if(histIdx<=0) return;
+  histIdx--;
+  const s=JSON.parse(history[histIdx]);
+  nodes=s.nodes; edges=s.edges;
+  selEdge=null; selNode=null; renderProps(); redraw();
+}
 
-    return `<div class="building-card${b.validated ? ' validated' : ''}" onclick="editBuilding(${b.id}, event)">
-      <div class="card-actions">
-        <button class="card-btn" onclick="editBuilding(${b.id}, event)" title="Modifier">✏️</button>
-        <button class="card-btn danger" onclick="deleteBuilding(${b.id}, event)" title="Supprimer">🗑</button>
+function redo(){
+  if(histIdx>=history.length-1) return;
+  histIdx++;
+  const s=JSON.parse(history[histIdx]);
+  nodes=s.nodes; edges=s.edges;
+  selEdge=null; selNode=null; renderProps(); redraw();
+}
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const map={s1:1,s2:1,s3:3};const cur=map[id]||1;
+  [1,2,3].forEach(n=>{
+    const el=document.getElementById('stp'+n);
+    el.classList.remove('active','done');
+    if(n<cur)el.classList.add('done');
+    else if(n===cur)el.classList.add('active');
+  });
+}
+function goS1(){showScreen('s1');renderBldgs();}
+
+// ═══════════════════════════════════════════════════
+// SCREEN 1
+// ═══════════════════════════════════════════════════
+function addBldg(){
+  const inp=document.getElementById('bldgIn');
+  const name=inp.value.trim();if(!name)return;
+  buildings.push({id:Date.now(),name,equipment:[],validated:false});
+  inp.value='';inp.focus();renderBldgs();
+}
+function delBldg(id,e){e.stopPropagation();buildings=buildings.filter(b=>b.id!==id);renderBldgs();}
+function editBldg(id,e){
+  e.stopPropagation();curBldgId=id;
+  const b=buildings.find(b=>b.id===id);
+  document.getElementById('s2Name').textContent='🏢 '+b.name;
+  renderAdded();showScreen('s2');
+}
+function renderBldgs(){
+  const grid=document.getElementById('bldgGrid');
+  const total=buildings.reduce((s,b)=>s+b.equipment.length,0);
+  document.getElementById('gTag').textContent=buildings.length+' bâtiment'+(buildings.length!==1?'s':'');
+  document.getElementById('clearBtn').style.display=buildings.length?'flex':'none';
+  if(!buildings.length){
+    grid.innerHTML=`<div class="empty-st"><div class="empty-ic">🏗️</div><span style="font-weight:500">Aucun bâtiment</span><span style="font-size:12px">Saisissez un nom et cliquez Ajouter</span></div>`;
+    document.getElementById('s1Info').innerHTML='Aucun bâtiment';return;
+  }
+  const val=buildings.filter(b=>b.validated).length;
+  document.getElementById('s1Info').innerHTML=`<strong>${buildings.length}</strong> bâtiment${buildings.length!==1?'s':''} · <strong>${total}</strong> équipements · ${val} validé${val!==1?'s':''}`;
+  grid.innerHTML=buildings.map(b=>{
+    const prev=b.equipment.slice(0,4).map(e=>`<div class="eq-chip">${svg2img(ICONS[e.icon],13)} ${e.name}</div>`).join('')+(b.equipment.length>4?`<div class="eq-chip">+${b.equipment.length-4}</div>`:'');
+    return `<div class="bldg-card${b.validated?' ok':''}" onclick="editBldg(${b.id},event)">
+      <div class="card-acts">
+        <button class="ca-btn" onclick="editBldg(${b.id},event)">✏️</button>
+        <button class="ca-btn del" onclick="delBldg(${b.id},event)">🗑</button>
       </div>
-      <div class="building-card-header">
-        <div class="building-icon">${b.validated ? '✅' : '🏢'}</div>
-        <div class="building-info">
-          <div class="building-card-name">${b.name}</div>
-          <div class="building-card-meta">${b.equipment.length} équipement${b.equipment.length!==1?'s':''}</div>
+      <div class="bldg-hd">
+        <div class="bldg-icon">${b.validated?'✅':'🏢'}</div>
+        <div class="bldg-info" style="flex:1;min-width:0">
+          <div class="bldg-nm">${b.name}</div>
+          <div class="bldg-meta">${b.equipment.length} équipement${b.equipment.length!==1?'s':''}</div>
         </div>
-        ${b.validated ? `<span class="validated-badge">✓ Validé</span>` : ''}
+        ${b.validated?`<span class="vbadge">✓</span>`:''}
       </div>
-      ${b.equipment.length > 0 ? `<div class="building-equip-preview">${preview}</div>` : ''}
+      ${b.equipment.length?`<div class="eq-chips">${prev}</div>`:''}
     </div>`;
   }).join('');
 }
+function clearAll(){if(confirm('Supprimer tous les bâtiments ?')){buildings=[];renderBldgs();}}
 
-function clearAll() {
-  if (confirm('Supprimer tous les bâtiments ?')) {
-    buildings = [];
-    renderBuildings();
-  }
-}
-
-// ═══════════════════════════════════════════════
-// SCREEN 2 — EQUIPMENT
-// ═══════════════════════════════════════════════
-function renderEquipCatalog(filter = '') {
-  const container = document.getElementById('equipCategories');
-  const q = filter.toLowerCase();
-  let html = '';
-
-  EQUIPMENT_CATALOG.forEach(cat => {
-    const items = cat.items.filter(i =>
-      !q || i.name.toLowerCase().includes(q) || i.desc.toLowerCase().includes(q)
-    );
-    if (!items.length) return;
-    html += `<div class="equip-category-label">${cat.cat}</div>`;
-    items.forEach(item => {
-      html += `<div class="equip-item" onclick="addEquipment('${item.id}','${item.name}','${item.icon}')">
-        <div class="equip-item-icon">${ICONS[item.icon]}</div>
-        <div class="equip-item-info">
-          <div class="equip-item-name">${item.name}</div>
-          <div class="equip-item-desc">${item.desc}</div>
-        </div>
+// ═══════════════════════════════════════════════════
+// SCREEN 2
+// ═══════════════════════════════════════════════════
+function renderCatalog(filter=''){
+  const c=document.getElementById('eqCats'),q=filter.toLowerCase();let h='';
+  CATALOG.forEach(cat=>{
+    const items=cat.items.filter(i=>!q||i.name.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q));
+    if(!items.length)return;
+    h+=`<div class="cat-lbl">${cat.cat}</div>`;
+    items.forEach(item=>{
+      h+=`<div class="eq-it" onclick="addEq('${item.id}','${item.name}','${item.icon}')">
+        <div class="eq-it-ic">${ICONS[item.icon]}</div>
+        <div><div class="eq-it-nm">${item.name}</div><div class="eq-it-ds">${item.desc}</div></div>
       </div>`;
     });
   });
-
-  container.innerHTML = html || '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">Aucun résultat</div>';
+  c.innerHTML=h||'<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">Aucun résultat</div>';
+}
+function filterEq(v){renderCatalog(v);}
+function addEq(id,name,icon){
+  const b=buildings.find(b=>b.id===curBldgId);if(!b)return;
+  b.equipment.push({uid:Date.now(),id,name,icon});b.validated=false;renderAdded();
+}
+function removeEq(uid){
+  const b=buildings.find(b=>b.id===curBldgId);if(!b)return;
+  b.equipment=b.equipment.filter(e=>e.uid!==uid);renderAdded();
+}
+function clearEq(){
+  const b=buildings.find(b=>b.id===curBldgId);if(!b||!b.equipment.length)return;
+  if(confirm('Vider tous les équipements ?')){b.equipment=[];renderAdded();}
+}
+function validateBldg(){
+  const b=buildings.find(b=>b.id===curBldgId);if(!b)return;
+  b.validated=true;goS1();renderBldgs();
+}
+function renderAdded(){
+  const b=buildings.find(b=>b.id===curBldgId);if(!b)return;
+  document.getElementById('addedTtl').textContent=`Équipements ajoutés — ${b.equipment.length}`;
+  document.getElementById('s2cnt').textContent=b.equipment.length+' équipement'+(b.equipment.length!==1?'s':'');
+  const g=document.getElementById('addedGrid');
+  if(!b.equipment.length){g.innerHTML=`<div style="grid-column:1/-1;padding:36px;text-align:center;color:var(--text3);font-size:13px;border:1px dashed var(--border);border-radius:7px">Sélectionnez des équipements à gauche</div>`;return;}
+  g.innerHTML=b.equipment.map(e=>`<div class="added-card">
+    <div class="added-ic">${ICONS[e.icon]}</div>
+    <div class="added-nm">${e.name}</div>
+    <button class="rm-btn" onclick="removeEq(${e.uid})">✕</button>
+  </div>`).join('');
 }
 
-function filterEquip(val) { renderEquipCatalog(val); }
-
-function addEquipment(id, name, icon) {
-  const b = buildings.find(b => b.id === currentBuildingId);
-  if (!b) return;
-  b.equipment.push({ uid: Date.now(), id, name, icon });
-  b.validated = false;
-  renderAddedGrid();
-}
-
-function removeEquipment(uid) {
-  const b = buildings.find(b => b.id === currentBuildingId);
-  if (!b) return;
-  b.equipment = b.equipment.filter(e => e.uid !== uid);
-  renderAddedGrid();
-}
-
-function clearEquipment() {
-  const b = buildings.find(b => b.id === currentBuildingId);
-  if (!b) return;
-  if (b.equipment.length === 0) return;
-  if (confirm('Vider tous les équipements de ce bâtiment ?')) {
-    b.equipment = [];
-    renderAddedGrid();
-  }
-}
-
-function validateBuilding() {
-  const b = buildings.find(b => b.id === currentBuildingId);
-  if (!b) return;
-  b.validated = true;
-  backToS1();
-  renderBuildings();
-}
-
-function renderAddedGrid() {
-  const b = buildings.find(b => b.id === currentBuildingId);
-  if (!b) return;
-
-  document.getElementById('addedTitle').textContent = `Équipements ajoutés — ${b.equipment.length}`;
-  document.getElementById('s2CountTag').textContent = b.equipment.length + ' équipement' + (b.equipment.length!==1?'s':'');
-
-  const grid = document.getElementById('addedGrid');
-  if (!b.equipment.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text3);font-size:13px;border:1px dashed var(--border);border-radius:8px">
-      Aucun équipement ajouté.<br>Sélectionnez des équipements dans la bibliothèque à gauche.
-    </div>`;
-    return;
-  }
-
-  grid.innerHTML = b.equipment.map(e => `
-    <div class="added-equip-card">
-      <div class="added-equip-icon">${ICONS[e.icon]}</div>
-      <div class="added-equip-name">${e.name}</div>
-      <button class="remove-btn" onclick="removeEquipment(${e.uid})" title="Supprimer">✕</button>
-    </div>
-  `).join('');
-}
-
-// ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 // MODAL
-// ═══════════════════════════════════════════════
-function openNamingModal() {
-  if (!buildings.length) { alert('Ajoutez au moins un bâtiment avant de générer.'); return; }
-  const hasEquip = buildings.some(b => b.equipment.length > 0);
-  if (!hasEquip) { alert('Ajoutez des équipements dans au moins un bâtiment.'); return; }
-  document.getElementById('namingModal').classList.add('open');
-  document.getElementById('siteNameInput').focus();
+// ═══════════════════════════════════════════════════
+function openNaming(){
+  if(!buildings.length){alert('Ajoutez au moins un bâtiment.');return;}
+  document.getElementById('nmModal').classList.add('open');
+  setTimeout(()=>document.getElementById('siteIn').focus(),80);
+}
+function closeModal(){document.getElementById('nmModal').classList.remove('open');}
+function confirmGen(){
+  const name=document.getElementById('siteIn').value.trim();
+  if(!name){document.getElementById('siteIn').focus();return;}
+  siteName=name;closeModal();initDiagram();
 }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
-
-document.getElementById('namingModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('namingModal')) closeModal('namingModal');
-});
-
-function confirmGenerate() {
-  const name = document.getElementById('siteNameInput').value.trim();
-  if (!name) { document.getElementById('siteNameInput').focus(); return; }
-  siteName = name;
-  closeModal('namingModal');
-  generateDiagram();
-}
-
-// ═══════════════════════════════════════════════
-// DIAGRAM GENERATION
-// ═══════════════════════════════════════════════
-function generateDiagram() {
-  updateSteps('s3');
+// ═══════════════════════════════════════════════════
+// DIAGRAM INIT
+// ═══════════════════════════════════════════════════
+function initDiagram(){
   showScreen('s3');
+  const total=buildings.reduce((s,b)=>s+b.equipment.length,0);
+  document.getElementById('dgSite').textContent='🗺️ '+siteName;
+  document.getElementById('dgMeta').textContent=`${buildings.length} bâtiments · ${total} équipements · ${new Date().toLocaleDateString('fr-FR')}`;
 
-  const totalEquip = buildings.reduce((s,b) => s + b.equipment.length, 0);
-  document.getElementById('diagramSiteName').textContent = '🗺️ ' + siteName;
-  document.getElementById('diagramMeta').textContent =
-    buildings.length + ' bâtiment' + (buildings.length!==1?'s':'') +
-    ' · ' + totalEquip + ' équipement' + (totalEquip!==1?'s':'') +
-    ' · Généré le ' + new Date().toLocaleDateString('fr-FR');
-
-  setTimeout(drawDiagram, 80);
-}
-
-function drawDiagram() {
-  const area = document.getElementById('diagramArea');
-  const canvas = document.getElementById('diagramCanvas');
-  const W = area.clientWidth;
-  const H = area.clientHeight;
-
-  canvas.width = W;
-  canvas.height = H;
-
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
-
-  if (!buildings.length) return;
-
-  // Layout calculation
-  const PADDING = 48;
-  const NODE_W = 180;
-  const NODE_HEADER = 44;
-  const EQUIP_H = 36;
-  const NODE_PADDING = 14;
-
-  const bNodes = buildings.map(b => ({
-    ...b,
-    w: NODE_W,
-    h: NODE_HEADER + Math.max(b.equipment.length, 1) * EQUIP_H + NODE_PADDING * 2,
+  nodes=buildings.map(b=>({
+    id:b.id, label:b.name, equipment:b.equipment, validated:b.validated,
+    x:0, y:0, w:NW, h:NHdr+Math.max(b.equipment.length,1)*NEQ+NPAD*2
   }));
 
-  // Compute positions
-  const n = bNodes.length;
-  let cols, rows;
-  if (n <= 3) { cols = n; rows = 1; }
-  else if (n <= 6) { cols = 3; rows = Math.ceil(n/3); }
-  else { cols = 4; rows = Math.ceil(n/4); }
+  edges=[];
+  for(let i=0;i<nodes.length;i++)
+    for(let j=i+1;j<nodes.length;j++)
+      edges.push(mkEdge(nodes[i].id,nodes[j].id));
 
-  const colGap = Math.max(80, (W - PADDING*2 - cols * NODE_W) / Math.max(cols-1, 1));
-  const rowGap = 70;
+  selEdge=null;selNode=null;connFrom=null;
+  history=[];histIdx=-1;
+  autoLayout();
+  setupCanvas();
+  snapshot();
+}
 
-  bNodes.forEach((b, i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const totalRowW = cols * NODE_W + (Math.min(n - row*cols, cols) - 1) * colGap;
-    const startX = PADDING + (W - PADDING*2 - totalRowW) / 2;
-    b.x = startX + col * (NODE_W + colGap);
-    b.y = PADDING + row * (Math.max(...bNodes.slice(row*cols, (row+1)*cols).map(b2=>b2.h), 0) + rowGap);
+function mkEdge(a,b){
+  return {id:'e'+Date.now()+Math.random(),from:a,to:b,
+    color:defCfg.color,style:defCfg.style,width:defCfg.width,
+    label:'',arrow:true,curved:true};
+}
+
+// ═══════════════════════════════════════════════════
+// LAYOUT
+// ═══════════════════════════════════════════════════
+function autoLayout(){
+  if(!nodes.length)return;
+  const area=document.getElementById('diagArea');
+  const W=area.clientWidth||900, H=area.clientHeight||600;
+  const n=nodes.length;
+  const cols=n<=2?n:n<=6?3:n<=9?3:4;
+  const colGap=Math.max(70,Math.min(130,W*0.55/cols));
+  const totalW=cols*(NW+colGap)-colGap;
+  const startX=(W-totalW)/2;
+
+  nodes.forEach((nd,i)=>{
+    const col=i%cols, row=Math.floor(i/cols);
+    const rowNodes=nodes.slice(row*cols,(row+1)*cols);
+    const rowH=Math.max(...rowNodes.map(n2=>n2.h));
+    let prevH=0;
+    for(let r=0;r<row;r++){
+      const rn=nodes.slice(r*cols,(r+1)*cols);
+      prevH+=Math.max(...rn.map(n2=>n2.h))+80;
+    }
+    nd.x=startX+col*(NW+colGap);
+    nd.y=60+prevH;
   });
 
-  // Fit to canvas
-  const allX = bNodes.map(b => b.x);
-  const allY = bNodes.map(b => b.y);
-  const allX2 = bNodes.map(b => b.x + b.w);
-  const allY2 = bNodes.map(b => b.y + b.h);
-  const contentW = Math.max(...allX2) - Math.min(...allX) + PADDING*2;
-  const contentH = Math.max(...allY2) - Math.min(...allY) + PADDING*2;
-
-  panX = (W - contentW) / 2;
-  panY = (H - contentH) / 2 + 20;
-
-  renderFrame(ctx, W, H, bNodes, false);
-  setupPanZoom(canvas, ctx, W, H, bNodes);
+  tx=0;ty=0;sc=1;
+  setTimeout(()=>{fitView();},50);
 }
 
-function renderFrame(ctx, W, H, bNodes, offscreen = false) {
-  ctx.save();
-  ctx.clearRect(0, 0, W, H);
+function fitView(){
+  if(!nodes.length)return;
+  const area=document.getElementById('diagArea');
+  const W=area.clientWidth, H=area.clientHeight;
+  const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y);
+  const x2s=nodes.map(n=>n.x+n.w),y2s=nodes.map(n=>n.y+n.h);
+  const minX=Math.min(...xs),minY=Math.min(...ys);
+  const maxX=Math.max(...x2s),maxY=Math.max(...y2s);
+  const pad=50;
+  const sw=(W-pad*2)/(maxX-minX||1);
+  const sh=(H-pad*2)/(maxY-minY||1);
+  sc=Math.min(sw,sh,1.2);
+  tx=pad+(W-pad*2-(maxX-minX)*sc)/2-minX*sc;
+  ty=pad+(H-pad*2-(maxY-minY)*sc)/2-minY*sc;
+  updZoom();redraw();
+}
 
-  if (!offscreen) {
-    // Light background
-    ctx.fillStyle = '#f6f8fa';
-    ctx.fillRect(0, 0, W, H);
+// ═══════════════════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════════════════
+function setupCanvas(){
+  const area=document.getElementById('diagArea');
+  const cvs=document.getElementById('cvs');
+  cvs.width=area.clientWidth;
+  cvs.height=area.clientHeight;
+  cvs.addEventListener('mousedown',onMD);
+  cvs.addEventListener('mousemove',onMM);
+  cvs.addEventListener('mouseup',onMU);
+  cvs.addEventListener('mouseleave',onMU);
+  cvs.addEventListener('contextmenu',e=>e.preventDefault());
+  cvs.addEventListener('wheel',onWhl,{passive:false});
+  redraw();
+}
 
-    // Grid
-    ctx.strokeStyle = 'rgba(100,120,160,0.12)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 24) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-    for (let y = 0; y < H; y += 24) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-  } else {
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, W, H);
-  }
+window.addEventListener('resize',()=>{
+  if(!document.getElementById('s3').classList.contains('active'))return;
+  const area=document.getElementById('diagArea');
+  const cvs=document.getElementById('cvs');
+  cvs.width=area.clientWidth;cvs.height=area.clientHeight;
+  redraw();
+});
 
-  ctx.translate(panX, panY);
-  ctx.scale(scale, scale);
+function w2c(wx,wy){return{x:wx*sc+tx,y:wy*sc+ty};}
+function c2w(cx,cy){return{x:(cx-tx)/sc,y:(cy-ty)/sc};}
 
-  // DRAW CONNECTIONS
-  for (let i = 0; i < bNodes.length; i++) {
-    for (let j = i+1; j < bNodes.length; j++) {
-      drawConnection(ctx, bNodes[i], bNodes[j]);
+function snapXY(x,y){
+  if(!snapEnabled)return{x,y};
+  return{x:Math.round(x/SNAP)*SNAP, y:Math.round(y/SNAP)*SNAP};
+}
+
+// ═══════════════════════════════════════════════════
+// MOUSE
+// ═══════════════════════════════════════════════════
+function onMD(e){
+  const cvs=document.getElementById('cvs');
+  const r=cvs.getBoundingClientRect();
+  const cx=e.clientX-r.left, cy=e.clientY-r.top;
+  const {x,y}=c2w(cx,cy);
+
+  if(e.button===2||e.button===1){isPan=true;pmx=e.clientX;pmy=e.clientY;cvs.style.cursor='grabbing';return;}
+
+  if(tool==='sel'){
+    const nd=hitNode(x,y);
+    if(nd){
+      isDrag=true;dragNode=nd;dragOX=x-nd.x;dragOY=y-nd.y;
+      selNode=nd;selEdge=null;renderProps();redraw();return;
     }
+    const ed=hitEdge(x,y);
+    if(ed){selEdge=ed;selNode=null;renderProps();redraw();return;}
+    selEdge=null;selNode=null;renderProps();redraw();
   }
 
-  // DRAW NODES
-  bNodes.forEach(b => drawNode(ctx, b));
-
-  ctx.restore();
-}
-
-function drawConnection(ctx, a, b) {
-  const ax = a.x + a.w / 2;
-  const ay = a.y + a.h / 2;
-  const bx = b.x + b.w / 2;
-  const by = b.y + b.h / 2;
-
-  // Clamp to node borders
-  const [sx, sy] = getEdgePoint(a, bx, by);
-  const [ex, ey] = getEdgePoint(b, ax, ay);
-
-  const mx = (sx + ex) / 2;
-  const my = (sy + ey) / 2;
-
-  // Draw cable
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(sx, sy);
-  ctx.bezierCurveTo(mx, sy, mx, ey, ex, ey);
-  ctx.strokeStyle = '#94a3b8';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([6, 4]);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Arrow at end
-  drawArrow(ctx, mx, (sy+ey)/2, ex, ey, '#64748b');
-
-  // Midpoint connector dot
-  ctx.beginPath();
-  ctx.arc(mx, (sy+ey)/2, 4, 0, Math.PI*2);
-  ctx.fillStyle = '#cbd5e1';
-  ctx.strokeStyle = '#94a3b8';
-  ctx.lineWidth = 1;
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-function getEdgePoint(node, tx, ty) {
-  const cx = node.x + node.w / 2;
-  const cy = node.y + node.h / 2;
-  const dx = tx - cx;
-  const dy = ty - cy;
-  const scaleX = (node.w / 2) / Math.abs(dx || 0.001);
-  const scaleY = (node.h / 2) / Math.abs(dy || 0.001);
-  const s = Math.min(scaleX, scaleY);
-  return [cx + dx * s, cy + dy * s];
-}
-
-function drawArrow(ctx, x1, y1, x2, y2, color) {
-  const angle = Math.atan2(y2 - y1, x2 - x1);
-  const len = 8;
-  ctx.save();
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(x2, y2);
-  ctx.lineTo(x2 - len * Math.cos(angle - 0.4), y2 - len * Math.sin(angle - 0.4));
-  ctx.lineTo(x2 - len * Math.cos(angle + 0.4), y2 - len * Math.sin(angle + 0.4));
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawNode(ctx, b) {
-  const { x, y, w, h, name, equipment, validated } = b;
-  const HEADER_H = 44;
-  const EQUIP_H = 36;
-  const PADDING = 12;
-  const radius = 8;
-
-  ctx.save();
-
-  // Shadow
-  ctx.shadowColor = 'rgba(0,0,0,0.15)';
-  ctx.shadowBlur = 16;
-  ctx.shadowOffsetY = 4;
-
-  // Body
-  roundRect(ctx, x, y, w, h, radius);
-  ctx.fillStyle = 'white';
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
-
-  // Border
-  roundRect(ctx, x, y, w, h, radius);
-  ctx.strokeStyle = validated ? '#3fb950' : '#d0d7de';
-  ctx.lineWidth = validated ? 2 : 1.5;
-  ctx.stroke();
-
-  // Header
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + w - radius, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
-  ctx.lineTo(x + w, y + HEADER_H);
-  ctx.lineTo(x, y + HEADER_H);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
-  const hGrad = ctx.createLinearGradient(x, y, x, y + HEADER_H);
-  hGrad.addColorStop(0, validated ? '#dcfce7' : '#dbeafe');
-  hGrad.addColorStop(1, validated ? '#f0fdf4' : '#eff6ff');
-  ctx.fillStyle = hGrad;
-  ctx.fill();
-  ctx.restore();
-
-  // Header border bottom
-  ctx.beginPath();
-  ctx.moveTo(x, y + HEADER_H);
-  ctx.lineTo(x + w, y + HEADER_H);
-  ctx.strokeStyle = validated ? 'rgba(63,185,80,0.3)' : 'rgba(59,130,246,0.2)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  // Building icon in header
-  const iconSize = 20;
-  const iconX = x + PADDING;
-  const iconY = y + (HEADER_H - iconSize) / 2;
-  drawIconOnCanvas(ctx, validated ? 'server' : 'switch', iconX, iconY, iconSize);
-
-  // Building name
-  ctx.fillStyle = validated ? '#166534' : '#1e3a8a';
-  ctx.font = `600 13px 'DM Sans', sans-serif`;
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'left';
-  const nameX = iconX + iconSize + 8;
-  const maxNameW = w - PADDING - iconSize - 8 - 8 - (validated ? 20 : 0);
-  const truncName = truncateText(ctx, name, maxNameW);
-  ctx.fillText(truncName, nameX, y + HEADER_H / 2);
-
-  // Validated checkmark
-  if (validated) {
-    ctx.fillStyle = '#3fb950';
-    ctx.font = `13px sans-serif`;
-    ctx.textAlign = 'right';
-    ctx.fillText('✓', x + w - PADDING, y + HEADER_H / 2);
-  }
-
-  // Equipment list
-  const items = equipment.length > 0 ? equipment : [];
-  items.forEach((e, idx) => {
-    const ey = y + HEADER_H + PADDING + idx * EQUIP_H;
-
-    // Alternating row bg
-    if (idx % 2 === 0) {
-      ctx.fillStyle = 'rgba(0,0,0,0.02)';
-      ctx.fillRect(x + 1, ey - 2, w - 2, EQUIP_H);
+  if(tool==='conn'){
+    const nd=hitNode(x,y);
+    if(!nd)return;
+    if(!connFrom){connFrom=nd;redraw();return;}
+    if(connFrom.id!==nd.id){
+      const exists=edges.find(e=>(e.from===connFrom.id&&e.to===nd.id)||(e.from===nd.id&&e.to===connFrom.id));
+      if(!exists){
+        const ed=mkEdge(connFrom.id,nd.id);
+        edges.push(ed);snapshot();
+        selEdge=ed;selNode=null;renderProps();
+      }
     }
-
-    // Separator
-    if (idx > 0) {
-      ctx.beginPath();
-      ctx.moveTo(x + PADDING, ey - 2);
-      ctx.lineTo(x + w - PADDING, ey - 2);
-      ctx.strokeStyle = 'rgba(0,0,0,0.05)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-
-    // Icon
-    drawIconOnCanvas(ctx, e.icon, x + PADDING, ey + (EQUIP_H - 20)/2, 20);
-
-    // Name
-    ctx.fillStyle = '#24292f';
-    ctx.font = `13px 'DM Sans', sans-serif`;
-    ctx.textBaseline = 'middle';
-    ctx.textAlign = 'left';
-    ctx.fillText(e.name, x + PADDING + 26, ey + EQUIP_H/2);
-  });
-
-  if (equipment.length === 0) {
-    ctx.fillStyle = '#8b949e';
-    ctx.font = `12px 'DM Sans', sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Aucun équipement', x + w/2, y + HEADER_H + PADDING + 18);
+    connFrom=null;redraw();return;
   }
 
-  ctx.restore();
-}
-
-// Cache for rendered SVG icons
-const iconCache = {};
-
-function drawIconOnCanvas(ctx, iconId, x, y, size) {
-  const key = `${iconId}_${size}`;
-  if (iconCache[key]) {
-    ctx.drawImage(iconCache[key], x, y, size, size);
+  if(tool==='del'){
+    const ed=hitEdge(x,y);
+    if(ed){deleteEdge(ed.id);}
     return;
   }
-  const svg = ICONS[iconId];
-  if (!svg) return;
-  const blob = new Blob([svg], {type:'image/svg+xml'});
-  const url = URL.createObjectURL(blob);
-  const img = new Image();
-  img.onload = () => {
-    iconCache[key] = img;
-    ctx.drawImage(img, x, y, size, size);
-    URL.revokeObjectURL(url);
-  };
-  img.src = url;
 }
 
-function roundRect(ctx, x, y, w, h, r) {
+function onMM(e){
+  const cvs=document.getElementById('cvs');
+  const r=cvs.getBoundingClientRect();
+  const cx=e.clientX-r.left, cy=e.clientY-r.top;
+  const w=c2w(cx,cy);
+  mouseWorld={x:w.x,y:w.y};
+
+  if(isPan){
+    tx+=e.clientX-pmx;ty+=e.clientY-pmy;
+    pmx=e.clientX;pmy=e.clientY;
+    redraw();return;
+  }
+  if(isDrag&&dragNode){
+    let nx=w.x-dragOX, ny=w.y-dragOY;
+    const snapped=snapXY(nx,ny);
+    dragNode.x=snapped.x;dragNode.y=snapped.y;
+    redraw();return;
+  }
+
+  // Cursor
+  if(tool==='sel'){
+    cvs.style.cursor=hitNode(w.x,w.y)?'move':(hitEdge(w.x,w.y)?'pointer':'default');
+  }else if(tool==='conn'){
+    cvs.style.cursor=hitNode(w.x,w.y)?'crosshair':'default';
+    if(connFrom)redraw(); // live line preview
+  }else if(tool==='del'){
+    cvs.style.cursor=hitEdge(w.x,w.y)?'not-allowed':'default';
+  }
+}
+
+function onMU(e){
+  if(isDrag&&dragNode){snapshot();}
+  isPan=false;isDrag=false;dragNode=null;
+  const cvs=document.getElementById('cvs');
+  cvs.style.cursor='default';
+}
+
+function onWhl(e){
+  e.preventDefault();
+  const cvs=document.getElementById('cvs');
+  const r=cvs.getBoundingClientRect();
+  const cx=e.clientX-r.left,cy=e.clientY-r.top;
+  const d=e.deltaY>0?0.88:1.13;
+  tx=cx-(cx-tx)*d;ty=cy-(cy-ty)*d;
+  sc=Math.max(0.15,Math.min(3,sc*d));
+  updZoom();redraw();
+}
+
+function zoomIn(){sc=Math.min(sc*1.18,3);updZoom();redraw();}
+function zoomOut(){sc=Math.max(sc/1.18,0.15);updZoom();redraw();}
+function updZoom(){document.getElementById('zlbl').textContent=Math.round(sc*100)+'%';}
+
+// ═══════════════════════════════════════════════════
+// HIT TESTS
+// ═══════════════════════════════════════════════════
+function hitNode(x,y){
+  return nodes.slice().reverse().find(n=>x>=n.x&&x<=n.x+n.w&&y>=n.y&&y<=n.y+n.h);
+}
+
+function hitEdge(x,y){
+  const T=8/sc;
+  return edges.find(ed=>{
+    const a=nodes.find(n=>n.id===ed.from),b=nodes.find(n=>n.id===ed.to);
+    if(!a||!b)return false;
+    const [sx,sy]=edgePt(a,b.x+b.w/2,b.y+b.h/2);
+    const [ex,ey]=edgePt(b,a.x+a.w/2,a.y+a.h/2);
+    return distSeg(x,y,sx,sy,ex,ey)<T;
+  });
+}
+
+function edgePt(nd,tx2,ty2){
+  const cx=nd.x+nd.w/2,cy=nd.y+nd.h/2;
+  const dx=tx2-cx,dy=ty2-cy;
+  if(!dx&&!dy)return[cx,cy];
+  const s=Math.min((nd.w/2)/Math.abs(dx),(nd.h/2)/Math.abs(dy));
+  return[cx+dx*s,cy+dy*s];
+}
+
+function distSeg(px,py,x1,y1,x2,y2){
+  const dx=x2-x1,dy=y2-y1,l=dx*dx+dy*dy;
+  const t=l?Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/l)):0;
+  return Math.hypot(px-(x1+t*dx),py-(y1+t*dy));
+}
+
+// ═══════════════════════════════════════════════════
+// TOOLS
+// ═══════════════════════════════════════════════════
+function setTool(t){
+  tool=t;connFrom=null;
+  ['Sel','Conn','Del'].forEach(n=>{
+    const el=document.getElementById('tool'+n);
+    el.classList.remove('on','on-red');
+  });
+  if(t==='sel')document.getElementById('toolSel').classList.add('on');
+  if(t==='conn')document.getElementById('toolConn').classList.add('on');
+  if(t==='del')document.getElementById('toolDel').classList.add('on-red');
+  redraw();
+}
+
+function toggleSnap(){
+  snapEnabled=!snapEnabled;
+  document.getElementById('snapToggle').classList.toggle('on',snapEnabled);
+  const h=document.getElementById('snapHint');
+  h.innerHTML=snapEnabled
+    ?`<span class="kbd snap-on">Grille 20px</span> <span class="snap-on">✓ Activée</span>`
+    :`<span class="kbd" style="color:var(--text3)">Grille</span> <span style="color:var(--text3)">Désactivée</span>`;
+}
+
+// ═══════════════════════════════════════════════════
+// DEFAULT STYLE
+// ═══════════════════════════════════════════════════
+function renderDefSwatches(){
+  document.getElementById('defSwatches').innerHTML=CONN_COLORS.map(c=>`
+    <div class="sw${c===defCfg.color?' on':''}" style="background:${c}" onclick="setDefColor('${c}')"></div>
+  `).join('');
+}
+function setDefColor(c){defCfg.color=c;renderDefSwatches();}
+function setDW(w){
+  defCfg.width=w;
+  [1,2,3].forEach(n=>document.getElementById('dw'+n).classList.toggle('on',n===w));
+}
+
+// ═══════════════════════════════════════════════════
+// INSPECTOR
+// ═══════════════════════════════════════════════════
+function renderProps(){
+  const p=document.getElementById('propsPanel');
+  if(!selEdge){
+    p.innerHTML=`<div class="empty-insp"><div class="ei-ic">🔗</div>Sélectionnez un lien pour le personnaliser<br><br><span style="color:var(--text3);font-size:11px">Outil Sélection → cliquer un lien</span></div>`;
+    return;
+  }
+  const e=selEdge;
+  const fn=nodes.find(n=>n.id===e.from),tn=nodes.find(n=>n.id===e.to);
+
+  p.innerHTML=`
+    <div style="background:var(--bg3);border-radius:6px;padding:9px 11px;border:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text2)">
+      ${fn?.label||'?'} <span style="color:var(--blue)">→</span> ${tn?.label||'?'}
+    </div>
+
+    <div class="prop">
+      <div class="plbl">Étiquette</div>
+      <input class="pinput" id="elbl" value="${e.label||''}" placeholder="ex: 1Gbps, VLAN 10, Fibre..." oninput="upd('label',this.value)"/>
+    </div>
+
+    <div class="sep"></div>
+
+    <div class="prop">
+      <div class="plbl">Couleur</div>
+      <div class="swatches">${CONN_COLORS.map(c=>`<div class="sw${c===e.color?' on':''}" style="background:${c}" onclick="upd('color','${c}')"></div>`).join('')}</div>
+      <input type="color" class="pinput" style="height:30px;padding:2px 5px;cursor:pointer;margin-top:5px" value="${e.color}" oninput="upd('color',this.value)"/>
+    </div>
+
+    <div class="prop">
+      <div class="plbl">Style de ligne</div>
+      <select class="pselect" onchange="upd('style',this.value)">
+        <option value="solid"${e.style==='solid'?' selected':''}>Solide ────</option>
+        <option value="dashed"${e.style==='dashed'?' selected':''}>Pointillés ╌╌╌</option>
+        <option value="dotted"${e.style==='dotted'?' selected':''}>Pointés · · ·</option>
+        <option value="double"${e.style==='double'?' selected':''}>Double ══</option>
+      </select>
+    </div>
+
+    <div class="prop">
+      <div class="plbl">Épaisseur</div>
+      <div class="wbtns">
+        <button class="wbtn${e.width===1?' on':''}" onclick="upd('width',1)">Fin</button>
+        <button class="wbtn${e.width===2?' on':''}" onclick="upd('width',2)">Moyen</button>
+        <button class="wbtn${e.width===3?' on':''}" onclick="upd('width',3)">Épais</button>
+        <button class="wbtn${e.width===5?' on':''}" onclick="upd('width',5)">XL</button>
+      </div>
+    </div>
+
+    <div class="prop">
+      <div class="plbl">Routage</div>
+      <select class="pselect" onchange="upd('curved',this.value==='true')">
+        <option value="true"${e.curved!==false?' selected':''}>Courbe (Bézier)</option>
+        <option value="false"${e.curved===false?' selected':''}>Droite</option>
+      </select>
+    </div>
+
+    <div class="prop">
+      <div class="plbl">Flèche</div>
+      <select class="pselect" onchange="upd('arrow',this.value==='true')">
+        <option value="true"${e.arrow?' selected':''}>Avec flèche →</option>
+        <option value="false"${!e.arrow?' selected':''}>Sans flèche —</option>
+      </select>
+    </div>
+
+    <div class="prop">
+      <div class="plbl">Direction flèche</div>
+      <select class="pselect" onchange="upd('arrowBoth',this.value==='true')">
+        <option value="false"${!e.arrowBoth?' selected':''}>Une direction →</option>
+        <option value="true"${e.arrowBoth?' selected':''}>Bidirectionnel ↔</option>
+      </select>
+    </div>
+
+    <div class="sep"></div>
+    <button class="delbtn" onclick="deleteEdge('${e.id}')">🗑 Supprimer ce lien</button>
+  `;
+}
+
+function upd(prop,val){
+  if(!selEdge)return;
+  const idx=edges.findIndex(e=>e.id===selEdge.id);
+  if(idx<0)return;
+  edges[idx][prop]=val;selEdge=edges[idx];
+  snapshot();renderProps();redraw();
+}
+
+function deleteEdge(id){
+  edges=edges.filter(e=>e.id!==id);
+  if(selEdge?.id===id){selEdge=null;renderProps();}
+  snapshot();redraw();
+}
+
+// ═══════════════════════════════════════════════════
+// DRAW
+// ═══════════════════════════════════════════════════
+function redraw(){
+  const cvs=document.getElementById('cvs');
+  if(!cvs)return;
+  const ctx=cvs.getContext('2d');
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+
+  ctx.save();
+  ctx.translate(tx,ty);
+  ctx.scale(sc,sc);
+
+  // Draw edges
+  edges.forEach(ed=>drawEdge(ctx,ed,ed===selEdge));
+
+  // Live connect preview
+  if(connFrom&&tool==='conn'){
+    const [sx,sy]=edgePt(connFrom,mouseWorld.x,mouseWorld.y);
+    ctx.save();
+    ctx.setLineDash([6,5]);
+    ctx.strokeStyle='rgba(47,129,247,0.6)';
+    ctx.lineWidth=1.5/sc;
+    ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(mouseWorld.x,mouseWorld.y);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();ctx.arc(mouseWorld.x,mouseWorld.y,5/sc,0,Math.PI*2);
+    ctx.fillStyle='rgba(47,129,247,0.4)';ctx.fill();
+    // Pulse on source
+    ctx.strokeStyle='rgba(47,129,247,0.5)';ctx.lineWidth=2/sc;
+    ctx.strokeRect(connFrom.x-4,connFrom.y-4,connFrom.w+8,connFrom.h+8);
+    ctx.restore();
+  }
+
+  // Draw nodes
+  nodes.forEach(nd=>drawNode(ctx,nd,nd===selNode));
+
+  ctx.restore();
+}
+
+function drawEdge(ctx,ed,isSel){
+  const a=nodes.find(n=>n.id===ed.from),b=nodes.find(n=>n.id===ed.to);
+  if(!a||!b)return;
+  const [sx,sy]=edgePt(a,b.x+b.w/2,b.y+b.h/2);
+  const [ex,ey]=edgePt(b,a.x+a.w/2,a.y+a.h/2);
+  const mx=(sx+ex)/2,my=(sy+ey)/2;
+  const lw=ed.width||2;
+
+  ctx.save();
+
+  // Selection halo
+  if(isSel){
+    ctx.beginPath();
+    if(ed.curved!==false)ctx.bezierCurveTo&&(ctx.moveTo(sx,sy),ctx.bezierCurveTo(mx,sy,mx,ey,ex,ey));
+    else{ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);}
+    drawPath(ctx,ed,sx,sy,ex,ey,mx,my);
+    ctx.strokeStyle='rgba(47,129,247,.35)';
+    ctx.lineWidth=(lw+7)/sc;ctx.setLineDash([]);ctx.stroke();
+  }
+
+  // Double style pre-check
+  if(ed.style==='double'){
+    const off=3/sc;
+    ctx.setLineDash([]);
+    ctx.strokeStyle=ed.color;ctx.lineWidth=lw/sc;
+    [[0,-off],[0,off]].forEach(([ox,oy])=>{
+      ctx.save();ctx.translate(ox,oy);
+      ctx.beginPath();
+      if(ed.curved!==false){ctx.moveTo(sx,sy);ctx.bezierCurveTo(mx,sy,mx,ey,ex,ey);}
+      else{ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);}
+      ctx.stroke();ctx.restore();
+    });
+    ctx.restore();return;
+  }
+
+  // Dash
+  if(ed.style==='dashed')ctx.setLineDash([9/sc,6/sc]);
+  else if(ed.style==='dotted')ctx.setLineDash([2/sc,6/sc]);
+  else ctx.setLineDash([]);
+
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
+  if(ed.curved!==false){ctx.moveTo(sx,sy);ctx.bezierCurveTo(mx,sy,mx,ey,ex,ey);}
+  else{ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);}
+  ctx.strokeStyle=ed.color;ctx.lineWidth=lw/sc;ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Arrow(s)
+  if(ed.arrow!==false){
+    drawArrow(ctx,mx,(sy+ey)/2,ex,ey,ed.color,lw);
+    if(ed.arrowBoth)drawArrow(ctx,mx,(sy+ey)/2,sx,sy,ed.color,lw);
+  }
+
+  // Midpoint dot
+  ctx.beginPath();ctx.arc(mx,(sy+ey)/2,4/sc,0,Math.PI*2);
+  ctx.fillStyle='white';ctx.fill();
+  ctx.strokeStyle=ed.color;ctx.lineWidth=1.5/sc;ctx.stroke();
+
+  // Label
+  if(ed.label){
+    ctx.save();
+    const fs=12;
+    ctx.font=`500 ${fs}px DM Sans,sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    const lx=mx, ly=(sy+ey)/2-14/sc;
+    const tw=ctx.measureText(ed.label).width+10/sc;
+    const th=18/sc;
+    // Pill background
+    ctx.fillStyle='rgba(255,255,255,0.95)';
+    roundRect(ctx,lx-tw/2,ly-th/2,tw,th,th/2);ctx.fill();
+    ctx.strokeStyle=ed.color;ctx.lineWidth=1/sc;ctx.stroke();
+    ctx.fillStyle='#1a1a2e';ctx.fillText(ed.label,lx,ly);
+    ctx.restore();
+  }
+
+  ctx.restore();
 }
 
-function truncateText(ctx, text, maxW) {
-  if (ctx.measureText(text).width <= maxW) return text;
-  let t = text;
-  while (t.length > 0 && ctx.measureText(t+'…').width > maxW) t = t.slice(0,-1);
-  return t + '…';
+function drawPath(ctx,ed,sx,sy,ex,ey,mx,my){
+  ctx.beginPath();
+  if(ed.curved!==false){ctx.moveTo(sx,sy);ctx.bezierCurveTo(mx,sy,mx,ey,ex,ey);}
+  else{ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);}
 }
 
-// ═══════════════════════════════════════════════
-// PAN / ZOOM
-// ═══════════════════════════════════════════════
-let _bNodes = [];
-
-function setupPanZoom(canvas, ctx, W, H, bNodes) {
-  _bNodes = bNodes;
-
-  canvas.onmousedown = e => {
-    isPanning = true;
-    lastMX = e.clientX; lastMY = e.clientY;
-    canvas.style.cursor = 'grabbing';
-  };
-
-  canvas.onmousemove = e => {
-    if (!isPanning) return;
-    panX += e.clientX - lastMX;
-    panY += e.clientY - lastMY;
-    lastMX = e.clientX; lastMY = e.clientY;
-    renderFrame(ctx, W, H, bNodes);
-  };
-
-  canvas.onmouseup = canvas.onmouseleave = () => {
-    isPanning = false;
-    canvas.style.cursor = 'grab';
-  };
-
-  canvas.onwheel = e => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    panX = mx - (mx - panX) * delta;
-    panY = my - (my - panY) * delta;
-    scale = Math.max(0.3, Math.min(2.5, scale * delta));
-    renderFrame(ctx, W, H, bNodes);
-  };
+function drawArrow(ctx,x1,y1,x2,y2,col,w){
+  const ang=Math.atan2(y2-y1,x2-x1);
+  const L=Math.max(10,10/sc);
+  ctx.save();ctx.fillStyle=col;
+  ctx.beginPath();ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-L*Math.cos(ang-.38),y2-L*Math.sin(ang-.38));
+  ctx.lineTo(x2-L*Math.cos(ang+.38),y2-L*Math.sin(ang+.38));
+  ctx.closePath();ctx.fill();ctx.restore();
 }
 
-function resetView() {
-  panX = 0; panY = 0; scale = 1;
-  const canvas = document.getElementById('diagramCanvas');
-  const ctx = canvas.getContext('2d');
-  drawDiagram();
+function drawNode(ctx,nd,isSel){
+  const {x,y,w,h,label,equipment,validated}=nd;
+  const R=8;
+  ctx.save();
+
+  // Selection glow
+  if(isSel){
+    ctx.shadowColor='rgba(47,129,247,.45)';ctx.shadowBlur=18;
+    roundRect(ctx,x-3,y-3,w+6,h+6,R+2);
+    ctx.strokeStyle='rgba(47,129,247,.8)';ctx.lineWidth=2/sc;ctx.stroke();
+    ctx.shadowBlur=0;
+  }
+
+  // Connect-from highlight
+  if(connFrom?.id===nd.id){ctx.shadowColor='rgba(47,129,247,.6)';ctx.shadowBlur=22;}
+  else{ctx.shadowColor='rgba(0,0,0,.2)';ctx.shadowBlur=10;ctx.shadowOffsetY=3;}
+
+  // Body
+  roundRect(ctx,x,y,w,h,R);ctx.fillStyle='white';ctx.fill();
+  ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+
+  // Border
+  roundRect(ctx,x,y,w,h,R);
+  ctx.strokeStyle=validated?'#3fb950':'#d0d7de';
+  ctx.lineWidth=(validated?2:1.5)/sc;ctx.stroke();
+
+  // Header fill
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x+R,y);ctx.lineTo(x+w-R,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+R);ctx.lineTo(x+w,y+NHdr);ctx.lineTo(x,y+NHdr);ctx.lineTo(x,y+R);
+  ctx.quadraticCurveTo(x,y,x+R,y);ctx.closePath();
+  const hg=ctx.createLinearGradient(x,y,x,y+NHdr);
+  if(validated){hg.addColorStop(0,'#d1fae5');hg.addColorStop(1,'#ecfdf5');}
+  else{hg.addColorStop(0,'#dbeafe');hg.addColorStop(1,'#eff6ff');}
+  ctx.fillStyle=hg;ctx.fill();ctx.restore();
+
+  // Header separator
+  ctx.beginPath();ctx.moveTo(x,y+NHdr);ctx.lineTo(x+w,y+NHdr);
+  ctx.strokeStyle=validated?'rgba(63,185,80,.3)':'rgba(59,130,246,.2)';
+  ctx.lineWidth=1/sc;ctx.stroke();
+
+  // Node icon
+  drawIcon(ctx,'switch',x+NPAD,y+(NHdr-18)/2,18);
+
+  // Label
+  ctx.save();
+  ctx.fillStyle=validated?'#065f46':'#1e3a8a';
+  ctx.font=`600 ${13}px DM Sans,sans-serif`;
+  ctx.textBaseline='middle';ctx.textAlign='left';
+  ctx.fillText(trunc(ctx,label,w-NPAD-24-(validated?20:6)),x+NPAD+24,y+NHdr/2);
+  if(validated){ctx.fillStyle='#3fb950';ctx.font=`bold 13px sans-serif`;ctx.textAlign='right';ctx.fillText('✓',x+w-NPAD,y+NHdr/2);}
+  ctx.restore();
+
+  // Equipment rows
+  equipment.forEach((eq,i)=>{
+    const ey=y+NHdr+NPAD+i*NEQ;
+    if(i%2===0){ctx.fillStyle='rgba(0,0,0,.018)';ctx.fillRect(x+1,ey-2,w-2,NEQ);}
+    if(i>0){ctx.beginPath();ctx.moveTo(x+NPAD,ey-2);ctx.lineTo(x+w-NPAD,ey-2);ctx.strokeStyle='rgba(0,0,0,.05)';ctx.lineWidth=1/sc;ctx.stroke();}
+    drawIcon(ctx,eq.icon,x+NPAD,ey+(NEQ-17)/2,17);
+    ctx.fillStyle='#24292f';ctx.font=`${13}px DM Sans,sans-serif`;
+    ctx.textBaseline='middle';ctx.textAlign='left';
+    ctx.fillText(trunc(ctx,eq.name,w-NPAD*2-24),x+NPAD+22,ey+NEQ/2);
+  });
+
+  if(!equipment.length){
+    ctx.fillStyle='#9ca3af';ctx.font=`12px DM Sans,sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('Aucun équipement',x+w/2,y+NHdr+NPAD+16);
+  }
+  ctx.restore();
 }
 
-// ═══════════════════════════════════════════════
+function drawIcon(ctx,id,x,y,sz){
+  const key=id+'_'+sz;
+  if(icCache[key]){try{ctx.drawImage(icCache[key],x,y,sz,sz);}catch(e){}return;}
+  const svg=ICONS[id];if(!svg)return;
+  const blob=new Blob([svg],{type:'image/svg+xml'});
+  const url=URL.createObjectURL(blob);
+  const img=new Image();
+  img.onload=()=>{icCache[key]=img;try{ctx.drawImage(img,x,y,sz,sz);}catch(e){}URL.revokeObjectURL(url);redraw();};
+  img.src=url;
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function trunc(ctx,t,maxW){
+  if(maxW<=0)return t;
+  if(ctx.measureText(t).width<=maxW)return t;
+  while(t.length&&ctx.measureText(t+'…').width>maxW)t=t.slice(0,-1);
+  return t+'…';
+}
+
+// ═══════════════════════════════════════════════════
 // EXPORT
-// ═══════════════════════════════════════════════
-function exportPNG() {
-  const offCanvas = document.createElement('canvas');
-  const SCALE = 2;
-  const bNodes = _bNodes;
+// ═══════════════════════════════════════════════════
+function buildExportCanvas(titleH){
+  const PAD=50,SCALE=2;
+  if(!nodes.length)return null;
+  const xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y);
+  const x2=nodes.map(n=>n.x+n.w),y2=nodes.map(n=>n.y+n.h);
+  const minX=Math.min(...xs)-PAD,minY=Math.min(...ys)-PAD;
+  const maxX=Math.max(...x2)+PAD,maxY=Math.max(...y2)+PAD;
+  const W=(maxX-minX)*SCALE,H=(maxY-minY+titleH)*SCALE;
 
-  // Calculate bounds
-  const allX = bNodes.map(b => b.x);
-  const allY = bNodes.map(b => b.y);
-  const allX2 = bNodes.map(b => b.x + b.w);
-  const allY2 = bNodes.map(b => b.y + b.h);
-  const minX = Math.min(...allX) - 40;
-  const minY = Math.min(...allY) - 60;
-  const maxX = Math.max(...allX2) + 40;
-  const maxY = Math.max(...allY2) + 40;
+  const off=document.createElement('canvas');
+  off.width=W;off.height=H;
+  const ctx=off.getContext('2d');ctx.scale(SCALE,SCALE);
+  ctx.fillStyle='white';ctx.fillRect(0,0,W,H);
 
-  const cW = (maxX - minX + 80) * SCALE;
-  const cH = (maxY - minY + 80 + 50) * SCALE;
+  if(titleH>0){
+    ctx.fillStyle='#0d1117';ctx.font=`bold 20px DM Sans,sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText('🗺️ '+siteName,(maxX-minX)/2,14);
+    ctx.fillStyle='#6e7681';ctx.font=`12px JetBrains Mono,monospace`;
+    ctx.fillText(`${nodes.length} bâtiments · ${nodes.reduce((s,n)=>s+n.equipment.length,0)} équipements · ${new Date().toLocaleDateString('fr-FR')}`,(maxX-minX)/2,42);
+  }
 
-  offCanvas.width = cW;
-  offCanvas.height = cH;
-  const ctx = offCanvas.getContext('2d');
-  ctx.scale(SCALE, SCALE);
+  const stx=tx,sty=ty,ssc=sc;
+  tx=-minX;ty=-minY+titleH;sc=1;
+  edges.forEach(ed=>drawEdge(ctx,ed,false));
+  nodes.forEach(nd=>drawNode(ctx,nd,false));
+  tx=stx;ty=sty;sc=ssc;
 
-  // White background
-  ctx.fillStyle = 'white';
-  ctx.fillRect(0, 0, cW, cH);
-
-  // Title
-  ctx.fillStyle = '#0d1117';
-  ctx.font = `bold 18px 'DM Sans', sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText(siteName, (maxX - minX + 80) / 2, 32);
-
-  ctx.fillStyle = '#6e7681';
-  ctx.font = `12px 'DM Sans', sans-serif`;
-  ctx.fillText(`${bNodes.length} bâtiments · ${bNodes.reduce((s,b) => s+b.equipment.length, 0)} équipements`, (maxX - minX + 80) / 2, 50);
-
-  // Offset translate
-  const savedPX = panX, savedPY = panY, savedScale = scale;
-  panX = -minX + 40;
-  panY = -minY + 60;
-  scale = 1;
-
-  renderFrame(ctx, cW/SCALE, cH/SCALE, bNodes, true);
-
-  panX = savedPX; panY = savedPY; scale = savedScale;
-
-  setTimeout(() => {
-    const link = document.createElement('a');
-    link.download = `reseau-${siteName.replace(/\s+/g,'-')}.png`;
-    link.href = offCanvas.toDataURL('image/png');
-    link.click();
-  }, 500);
+  return off;
 }
 
-function exportPDF() {
-  const canvas = document.getElementById('diagramCanvas');
-  const img = canvas.toDataURL('image/png');
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head>
-    <title>Réseau — ${siteName}</title>
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap');
-      body{margin:0;background:white;font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;padding:40px 20px;}
-      h1{font-size:22px;font-weight:700;color:#0d1117;margin-bottom:4px;letter-spacing:-0.3px;}
-      .meta{font-size:12px;color:#6e7681;margin-bottom:24px;font-family:monospace;}
-      img{max-width:100%;border:1px solid #d0d7de;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.1);}
-      @media print{body{padding:20px;}img{max-width:100%;}}
-    </style></head><body>
-    <h1>🗺️ ${siteName}</h1>
-    <div class="meta">Schéma réseau · ${buildings.length} bâtiment${buildings.length!==1?'s':''} · ${buildings.reduce((s,b)=>s+b.equipment.length,0)} équipements · ${new Date().toLocaleDateString('fr-FR')}</div>
-    <img src="${img}"/>
-    <script>setTimeout(()=>window.print(),600)<\/script>
-    </body></html>`);
-  win.document.close();
+function exportPNG(){
+  const c=buildExportCanvas(70);if(!c)return;
+  setTimeout(()=>{
+    const a=document.createElement('a');
+    a.download=`reseau-${siteName.replace(/\s+/g,'-').toLowerCase()}.png`;
+    a.href=c.toDataURL('image/png');a.click();
+  },700);
 }
 
-// ═══════════════════════════════════════════════
+function exportPDF(){
+  const c=buildExportCanvas(0);if(!c)return;
+  setTimeout(()=>{
+    const img=c.toDataURL('image/png');
+    const w=window.open('','_blank');
+    w.document.write(`<!DOCTYPE html><html><head>
+      <title>${siteName}</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap');
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:white;font-family:'DM Sans',sans-serif;padding:32px;display:flex;flex-direction:column;align-items:center;}
+        .hdr{text-align:center;margin-bottom:22px;}
+        h1{font-size:22px;font-weight:700;color:#0d1117;margin-bottom:5px;}
+        .m{font-size:11px;color:#6e7681;font-family:monospace;}
+        img{max-width:100%;border:1px solid #e0e0e0;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.08);}
+        @media print{body{padding:16px;}}
+      </style></head><body>
+      <div class="hdr"><h1>🗺️ ${siteName}</h1>
+      <div class="m">Schéma réseau · ${nodes.length} bâtiments · ${nodes.reduce((s,n)=>s+n.equipment.length,0)} équipements · ${new Date().toLocaleDateString('fr-FR')}</div></div>
+      <img src="${img}"/>
+      <script>setTimeout(()=>window.print(),700)<\/script>
+      </body></html>`);
+    w.document.close();
+  },700);
+}
+
+// ═══════════════════════════════════════════════════
 // HELPERS
-// ═══════════════════════════════════════════════
-function svgToImgTag(svg, size) {
-  const b64 = btoa(unescape(encodeURIComponent(svg)));
-  return `<img src="data:image/svg+xml;base64,${b64}" width="${size}" height="${size}" style="vertical-align:middle;flex-shrink:0"/>`;
+// ═══════════════════════════════════════════════════
+function svg2img(svg,sz){
+  const b64=btoa(unescape(encodeURIComponent(svg)));
+  return`<img src="data:image/svg+xml;base64,${b64}" width="${sz}" height="${sz}" style="vertical-align:middle;flex-shrink:0"/>`;
 }
 
-// Init
 init();
 </script>
 </body>
