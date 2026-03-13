@@ -1593,19 +1593,14 @@ function trunc(ctx,t,maxW){
 // ════════════════════════════════════════════
 function buildOffCanvas(titleH){
   if(!nodes.length)return null;
-  const PAD=80, S=2; // S=2 pour haute résolution
+  const PAD=80, S=2;
 
-  // Bornes réelles de tous les nœuds
-  const xs=nodes.map(n=>n.x);
-  const ys=nodes.map(n=>n.y);
-  const x2=nodes.map(n=>n.x+n.w);
-  const y2=nodes.map(n=>n.y+n.h);
-  const minX=Math.min(...xs)-PAD;
-  const minY=Math.min(...ys)-PAD;
-  const maxX=Math.max(...x2)+PAD;
-  const maxY=Math.max(...y2)+PAD;
-  const cW=maxX-minX;
-  const cH=maxY-minY;
+  // Bornes exactes de tous les nœuds en coordonnées monde
+  const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y);
+  const x2=nodes.map(n=>n.x+n.w), y2=nodes.map(n=>n.y+n.h);
+  const minX=Math.min(...xs)-PAD, minY=Math.min(...ys)-PAD;
+  const maxX=Math.max(...x2)+PAD, maxY=Math.max(...y2)+PAD;
+  const cW=maxX-minX, cH=maxY-minY;
 
   const off=document.createElement('canvas');
   off.width=cW*S;
@@ -1613,24 +1608,21 @@ function buildOffCanvas(titleH){
   const ctx=off.getContext('2d');
   ctx.scale(S,S);
 
-  // Fond quadrillé
-  ctx.fillStyle='#eef2f7';
-  ctx.fillRect(0,0,cW,cH+titleH);
+  // Fond
+  ctx.fillStyle='#eef2f7'; ctx.fillRect(0,0,cW,cH+titleH);
   ctx.fillStyle='rgba(100,120,150,0.2)';
-  const gSz=22;
-  for(let gx=0;gx<=cW;gx+=gSz)
-    for(let gy=titleH;gy<=cH+titleH;gy+=gSz){
+  for(let gx=0;gx<=cW;gx+=22)
+    for(let gy=titleH;gy<=cH+titleH;gy+=22){
       ctx.beginPath();ctx.arc(gx,gy,1,0,Math.PI*2);ctx.fill();
     }
 
-  // Barre de titre
+  // Titre
   if(titleH>0){
-    ctx.fillStyle='#1e293b';
-    ctx.fillRect(0,0,cW,titleH);
-    ctx.fillStyle='#ffffff';
+    ctx.fillStyle='#1e293b'; ctx.fillRect(0,0,cW,titleH);
+    ctx.fillStyle='#fff';
     ctx.font=`bold 22px DM Sans,sans-serif`;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(siteName,cW/2,titleH*0.4);
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(siteName, cW/2, titleH*0.4);
     ctx.fillStyle='rgba(255,255,255,0.5)';
     ctx.font=`12px JetBrains Mono,monospace`;
     ctx.fillText(
@@ -1641,49 +1633,45 @@ function buildOffCanvas(titleH){
     );
   }
 
-  // Dessiner le schéma — on repositionne tx/ty pour que minX,minY → 0,0
-  const stx=tx, sty=ty, ssc=sc;
-  tx = -minX;
-  ty = -minY + titleH;
-  sc = 1;
-
+  // Dessiner le schéma avec le bon transform :
+  // nœuds en coords monde → on translate pour que (minX,minY) => (0, titleH)
+  ctx.save();
+  ctx.translate(-minX, -minY+titleH);
+  // sc=1 : on dessine 1:1 en coords monde
+  // Les fonctions drawEdge/drawNode utilisent la variable globale sc pour les lineWidth
+  // On sauvegarde sc et on le met à 1 le temps du rendu
+  const ssc=sc; sc=1;
   edges.forEach(ed=>drawEdge(ctx,ed,false));
   nodes.forEach(nd=>drawNode(ctx,nd,false));
+  sc=ssc;
+  ctx.restore();
 
-  tx=stx; ty=sty; sc=ssc;
   return off;
 }
 
 function exportPNG(){
   if(!nodes.length)return;
-  // Preload all icons first, then export
-  preloadAllIcons(()=>{
-    setTimeout(()=>{
-      const c=buildOffCanvas(70);if(!c)return;
-      const a=document.createElement('a');
-      a.download=`reseau-${siteName.replace(/\s+/g,'-').toLowerCase()}.png`;
-      a.href=c.toDataURL('image/png');a.click();
-    },200);
-  });
+  const c=buildOffCanvas(70);
+  if(!c)return;
+  const a=document.createElement('a');
+  a.download=`reseau-${siteName.replace(/\s+/g,'-').toLowerCase()}.png`;
+  a.href=c.toDataURL('image/png');
+  a.click();
 }
 
 function exportPDF(){
   if(!nodes.length)return;
-  preloadAllIcons(()=>{
-    setTimeout(()=>{
-      const c=buildOffCanvas(0);if(!c)return;
-      const img=c.toDataURL('image/png');
-      const w=window.open('','_blank');
-      w.document.write(`<!DOCTYPE html><html><head><title>${siteName}</title>
-      <style>*{margin:0;padding:0;}body{background:white;font-family:'DM Sans',sans-serif;padding:32px;display:flex;flex-direction:column;align-items:center;}
-      .hdr{text-align:center;margin-bottom:22px;}h1{font-size:22px;font-weight:700;color:#0d1117;margin-bottom:5px;}.m{font-size:11px;color:#6e7681;font-family:monospace;}
-      img{max-width:100%;border:1px solid #e0e0e0;border-radius:8px;}</style></head><body>
-      <div class="hdr"><h1>🗺️ ${siteName}</h1><div class="m">Schéma réseau · ${nodes.length} bâtiments · ${nodes.reduce((s,n)=>s+n.equipment.length,0)} équipements · ${new Date().toLocaleDateString('fr-FR')}</div></div>
-      <img src="${img}"/>
-      <script>setTimeout(()=>window.print(),700)<\/script></body></html>`);
-      w.document.close();
-    },200);
-  });
+  const c=buildOffCanvas(0);if(!c)return;
+  const img=c.toDataURL('image/png');
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>${siteName}</title>
+  <style>*{margin:0;padding:0;}body{background:white;font-family:'DM Sans',sans-serif;padding:32px;display:flex;flex-direction:column;align-items:center;}
+  .hdr{text-align:center;margin-bottom:22px;}h1{font-size:22px;font-weight:700;color:#0d1117;margin-bottom:5px;}.m{font-size:11px;color:#6e7681;font-family:monospace;}
+  img{max-width:100%;border:1px solid #e0e0e0;border-radius:8px;}</style></head><body>
+  <div class="hdr"><h1>${siteName}</h1><div class="m">Schéma réseau · ${nodes.length} bâtiments · ${nodes.reduce((s,n)=>s+n.equipment.length,0)} équipements · ${new Date().toLocaleDateString('fr-FR')}</div></div>
+  <img src="${img}"/>
+  <script>setTimeout(()=>window.print(),700)<\/script></body></html>`);
+  w.document.close();
 }
 
 // Génère un mini canvas HTML avec l'icône dessinée vectoriellement
