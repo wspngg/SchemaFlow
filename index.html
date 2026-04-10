@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>NetSchema — Générateur de schéma réseau</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>SchémaFlow — Générateur de Schémas Réseau</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#21262d;
@@ -14,7 +14,7 @@
   --gn:#3fb950;--gnd:rgba(63,185,80,.12);
   --rd:#f85149;--rdd:rgba(248,81,73,.12);
   --or:#e3b341;--pu:#a371f7;
-  --r:8px;--f:'DM Sans',sans-serif;--m:'JetBrains Mono',monospace;
+  --r:8px;--f:'Plus Jakarta Sans',sans-serif;--m:'JetBrains Mono',monospace;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;}
@@ -22,13 +22,13 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 .app{display:flex;flex-direction:column;height:100vh;}
 
 /* TOPBAR */
-.tb{height:52px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;}
-.logo{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;}
-.logo-m{width:28px;height:28px;background:linear-gradient(135deg,#2f81f7,#388bfd);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 8px rgba(47,129,247,.4);}
+.tb{height:54px;background:var(--bg2);border-bottom:2px solid var(--bd);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;}
+.logo{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:800;letter-spacing:-.3px;color:var(--tx);}
+.logo-m{width:28px;height:28px;background:linear-gradient(135deg,#F2A900,#D4830A);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 8px rgba(242,169,0,.4);}
 .tb-div{width:1px;height:20px;background:var(--bd);}
 .tb-r{margin-left:auto;display:flex;align-items:center;gap:8px;}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
-.c-bl{background:var(--bld);color:var(--bl);border:1px solid rgba(47,129,247,.22);}
+.c-bl{background:var(--yld);color:#A06800;border:1px solid rgba(242,169,0,.28);}
 .c-gn{background:var(--gnd);color:var(--gn);border:1px solid rgba(63,185,80,.22);}
 .c-or{background:rgba(227,179,65,.1);color:var(--or);border:1px solid rgba(227,179,65,.22);}
 .c-rd{background:var(--rdd);color:var(--rd);border:1px solid rgba(248,81,73,.22);}
@@ -36,12 +36,12 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 /* STEPS */
 .stps{display:flex;align-items:center;background:var(--bg3);border-bottom:1px solid var(--bd);padding:0 20px;height:46px;flex-shrink:0;}
 .stp{display:flex;align-items:center;gap:9px;padding:0 18px;height:100%;font-size:13px;font-weight:500;color:var(--tx2);position:relative;white-space:nowrap;}
-.stp::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--bl);transform:scaleX(0);transition:transform .2s;}
+.stp::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--yl);transform:scaleX(0);transition:transform .2s;}
 .stp.on{color:var(--tx);}
 .stp.on::after{transform:scaleX(1);}
 .stp.done{color:var(--gn);}
 .stp-n{width:19px;height:19px;border-radius:50%;border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--m);}
-.stp.on .stp-n{background:var(--bl);border-color:var(--bl);color:#fff;}
+.stp.on .stp-n{background:var(--yl);border-color:var(--yl);color:#fff;}
 .stp.done .stp-n{background:var(--gn);border-color:var(--gn);color:#fff;}
 .stp-a{color:var(--tx3);padding:0 2px;}
 
@@ -52,17 +52,17 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 /* ═══ S1 ═══ */
 #s1{flex-direction:column;}
 .s1b{flex:1;display:flex;flex-direction:column;padding:26px 30px;gap:16px;overflow-y:auto;}
-.pgt{font-size:21px;font-weight:700;letter-spacing:-.3px;}
+.pgt{font-size:22px;font-weight:800;letter-spacing:-.4px;color:var(--tx);}
 .pgs{font-size:13px;color:var(--tx2);margin-top:2px;}
 .add-r{display:flex;gap:8px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:10px 13px;align-items:center;}
 .add-r input{flex:1;background:none;border:none;outline:none;font-family:var(--f);font-size:14px;color:var(--tx);}
 .add-r input::placeholder{color:var(--tx3);}
 .bg{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:12px;}
 .bc{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;cursor:pointer;transition:all .18s;position:relative;}
-.bc:hover{border-color:var(--bd2);background:var(--bg3);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.bc:hover{border-color:rgba(242,169,0,.4);background:var(--bg3);transform:translateY(-1px);box-shadow:0 8px 24px rgba(242,169,0,.10);}
 .bc.ok{border-color:rgba(63,185,80,.4);}
 .bc-hd{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
-.bc-ic{width:32px;height:32px;background:var(--bld);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.bc-ic{width:32px;height:32px;background:var(--yld);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .bc.ok .bc-ic{background:var(--gnd);}
 .bc-nm{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bc-mt{font-size:11px;color:var(--tx2);margin-top:1px;}
@@ -86,12 +86,12 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 .sdh{padding:13px;border-bottom:1px solid var(--bd);flex-shrink:0;}
 .sdtt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tx2);margin-bottom:9px;}
 .sds{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:7px 11px;font-family:var(--f);font-size:13px;color:var(--tx);outline:none;}
-.sds:focus{border-color:var(--bl);}
+.sds:focus{border-color:var(--yl);}
 .sds::placeholder{color:var(--tx3);}
 .cats{flex:1;overflow-y:auto;padding:9px;display:flex;flex-direction:column;gap:2px;}
 .cl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx3);padding:7px 8px 3px;}
 .ei{display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:6px;cursor:pointer;transition:all .15s;border:1px solid transparent;}
-.ei:hover{background:var(--bld);border-color:rgba(47,129,247,.18);}
+.ei:hover{background:var(--yld);border-color:rgba(242,169,0,.25);}
 .ei-ic{width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .ei-ic svg{width:100%;height:100%;}
 .ei-nm{font-size:13px;font-weight:500;}
@@ -100,12 +100,12 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 /* S2 main */
 .s2m{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .s2t{height:50px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 18px;gap:10px;flex-shrink:0;}
-.bb{display:flex;align-items:center;gap:7px;background:var(--bld);border:1px solid rgba(47,129,247,.28);border-radius:6px;padding:4px 10px;font-size:13px;font-weight:600;color:var(--bl);}
+.bb{display:flex;align-items:center;gap:7px;background:var(--yld);border:1px solid rgba(242,169,0,.35);border-radius:6px;padding:4px 10px;font-size:13px;font-weight:600;color:#A06800;}
 .s2c{flex:1;padding:20px;overflow-y:auto;}
 
 /* Equipment naming cards */
 .eq-name-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:10px;}
-.eq-card{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:9px;position:relative;animation:pop .18s cubic-bezier(.34,1.56,.64,1);}
+.eq-card{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:9px;position:relative;animation:pop .18s cubic-bezier(.34,1.56,.64,1);border-top:2px solid var(--yl);}
 @keyframes pop{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
 .eq-card.unnamed{border-color:rgba(248,81,73,.4);background:rgba(248,81,73,.03);}
 .eq-card-top{display:flex;align-items:center;gap:9px;}
@@ -114,14 +114,14 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 .eq-card-type{font-size:12px;font-weight:600;color:var(--tx);}
 .eq-card-sub{font-size:11px;color:var(--tx2);}
 .eq-name-input{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:7px 10px;font-family:var(--f);font-size:13px;color:var(--tx);outline:none;transition:border-color .15s;}
-.eq-name-input:focus{border-color:var(--bl);box-shadow:0 0 0 3px var(--blg);}
+.eq-name-input:focus{border-color:var(--yl);box-shadow:0 0 0 3px rgba(242,169,0,.22);}
 .eq-name-input::placeholder{color:var(--tx3);}
 .eq-name-input.err{border-color:var(--rd);}
 .eq-rm{position:absolute;top:8px;right:8px;width:20px;height:20px;border:1px solid var(--bd);background:none;color:var(--tx3);border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;opacity:0;transition:all .15s;}
 .eq-card:hover .eq-rm{opacity:1;}
 .eq-rm:hover{background:var(--rdd);color:var(--rd);border-color:var(--rd);}
 .eq-note-input{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font-family:var(--f);font-size:12px;color:var(--tx);outline:none;resize:vertical;min-height:52px;transition:border-color .15s;line-height:1.5;}
-.eq-note-input:focus{border-color:var(--bl);box-shadow:0 0 0 3px var(--blg);}
+.eq-note-input:focus{border-color:var(--yl);box-shadow:0 0 0 3px rgba(242,169,0,.22);}
 .eq-note-input::placeholder{color:var(--tx3);}
 .eq-note-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--tx3);margin-top:4px;margin-bottom:3px;}
 
@@ -129,16 +129,16 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 
 /* ═══ BUTTONS ═══ */
 .btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--f);font-size:13px;font-weight:500;padding:7px 13px;border-radius:6px;border:1px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.bp{background:var(--bl);color:#fff;border-color:var(--bl);}
-.bp:hover{background:#388bfd;box-shadow:0 0 0 3px var(--blg);}
+.bp{background:var(--yl);color:#1A1D27;border-color:var(--yl);font-weight:600;}
+.bp:hover{background:#D4830A;box-shadow:0 0 0 3px rgba(242,169,0,.28);}
 .bs{background:var(--bg4);color:var(--tx);border-color:var(--bd2);}
 .bs:hover{background:var(--bg3);}
 .bg2c{background:transparent;color:var(--tx2);border-color:transparent;}
 .bg2c:hover{background:var(--bg4);color:var(--tx);}
 .bd2c{background:var(--rdd);color:var(--rd);border-color:rgba(248,81,73,.3);}
 .bd2c:hover{background:rgba(248,81,73,.22);}
-.bok{background:var(--gn);color:#0d1117;border-color:var(--gn);font-weight:700;}
-.bok:hover{background:#46c956;}
+.bok{background:var(--yl);color:#1A1D27;border-color:var(--yl);font-weight:700;}
+.bok:hover{background:#D4830A;box-shadow:0 0 0 3px rgba(242,169,0,.28);}
 .blg{padding:9px 18px;font-size:14px;border-radius:7px;}
 .bic{width:30px;height:30px;padding:0;justify-content:center;}
 
@@ -153,7 +153,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 .fg{margin-bottom:13px;}
 .fl{display:block;font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
 .fi{width:100%;background:var(--bg3);border:1px solid var(--bd2);border-radius:7px;padding:9px 13px;font-family:var(--f);font-size:14px;color:var(--tx);outline:none;transition:border-color .15s;}
-.fi:focus{border-color:var(--bl);box-shadow:0 0 0 3px var(--blg);}
+.fi:focus{border-color:var(--yl);box-shadow:0 0 0 3px rgba(242,169,0,.22);}
 .fi::placeholder{color:var(--tx3);}
 .ma{display:flex;gap:9px;justify-content:flex-end;margin-top:20px;}
 
@@ -165,7 +165,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 .tools{display:flex;gap:4px;}
 .tool{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px 6px;border-radius:6px;border:1px solid var(--bd);background:var(--bg3);color:var(--tx2);font-size:11px;font-family:var(--f);font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .tool:hover{border-color:var(--bd2);color:var(--tx);}
-.tool.on{background:var(--bld);border-color:rgba(47,129,247,.4);color:var(--bl);}
+.tool.on{background:var(--yld);border-color:rgba(242,169,0,.45);color:#A06800;}
 .tool.on-r{background:var(--rdd);border-color:rgba(248,81,73,.3);color:var(--rd);}
 
 /* Spacing control */
@@ -173,34 +173,34 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 .range-row{display:flex;align-items:center;gap:8px;}
 .range-lbl{font-size:12px;color:var(--tx2);white-space:nowrap;}
 .rng{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--bd2);outline:none;cursor:pointer;}
-.rng::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--bl);cursor:pointer;box-shadow:0 0 0 3px var(--blg);}
-.rng-val{font-family:var(--m);font-size:11px;color:var(--bl);min-width:28px;text-align:right;}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--yl);cursor:pointer;box-shadow:0 0 0 3px rgba(242,169,0,.22);}
+.rng-val{font-family:var(--m);font-size:11px;color:#A06800;min-width:28px;text-align:right;}
 
 /* Inspector props */
 .props{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}
 .prop{display:flex;flex-direction:column;gap:4px;}
 .plb{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tx2);}
 .pi{background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:7px 10px;color:var(--tx);font-family:var(--f);font-size:13px;outline:none;width:100%;transition:border-color .15s;}
-.pi:focus{border-color:var(--bl);}
+.pi:focus{border-color:var(--yl);}
 .ps{background:var(--bg3);border:1px solid var(--bd);border-radius:5px;padding:7px 10px;color:var(--tx);font-family:var(--f);font-size:13px;outline:none;width:100%;cursor:pointer;}
-.ps:focus{border-color:var(--bl);}
+.ps:focus{border-color:var(--yl);}
 .sws{display:flex;gap:4px;flex-wrap:wrap;}
 .sw{width:21px;height:21px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0;}
 .sw:hover{transform:scale(1.18);}
 .sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--bl);}
 .wb{display:flex;gap:4px;}
 .wbt{flex:1;padding:5px 3px;border:1px solid var(--bd);background:var(--bg3);color:var(--tx2);border-radius:5px;cursor:pointer;font-size:11px;font-weight:500;font-family:var(--f);transition:all .15s;text-align:center;}
-.wbt.on{border-color:var(--bl);color:var(--bl);background:var(--bld);}
+.wbt.on{border-color:var(--yl);color:#A06800;background:var(--yld);}
 .sp{height:1px;background:var(--bd);margin:2px 0;}
 .delbtn{width:100%;padding:8px;background:var(--rdd);border:1px solid rgba(248,81,73,.3);border-radius:6px;color:var(--rd);font-family:var(--f);font-size:13px;cursor:pointer;font-weight:500;transition:all .15s;}
 .delbtn:hover{background:rgba(248,81,73,.22);}
-.add-link-btn{width:100%;padding:8px;background:var(--bld);border:1px solid rgba(47,129,247,.3);border-radius:6px;color:var(--bl);font-family:var(--f);font-size:13px;cursor:pointer;font-weight:500;transition:all .15s;}
-.add-link-btn:hover{background:rgba(47,129,247,.2);}
+.add-link-btn{width:100%;padding:8px;background:var(--yld);border:1px solid rgba(242,169,0,.35);border-radius:6px;color:#A06800;font-family:var(--f);font-size:13px;cursor:pointer;font-weight:500;transition:all .15s;}
+.add-link-btn:hover{background:rgba(242,169,0,.22);}
 .emp-i2{text-align:center;color:var(--tx3);font-size:12px;padding:24px 10px;}
 .ei-i{font-size:24px;margin-bottom:6px;}
 .toggle-r{display:flex;align-items:center;gap:7px;}
 .tgl{width:34px;height:18px;background:var(--bg4);border-radius:9px;position:relative;cursor:pointer;border:1px solid var(--bd2);transition:background .2s;flex-shrink:0;}
-.tgl.on{background:var(--bl);border-color:var(--bl);}
+.tgl.on{background:var(--yl);border-color:var(--yl);}
 .tgl::after{content:'';position:absolute;width:12px;height:12px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s;}
 .tgl.on::after{transform:translateX(16px);}
 
@@ -210,7 +210,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 .dtb{flex:1;min-width:0;}
 .dts{font-size:15px;font-weight:700;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dtm{font-size:11px;color:var(--tx2);font-family:var(--m);}
-.da{flex:1;position:relative;overflow:hidden;background:#eef2f7;background-image:radial-gradient(circle,#b8c4d4 1px,transparent 1px);background-size:22px 22px;}
+.da{flex:1;position:relative;overflow:hidden;background:#F5F6F8;background-image:radial-gradient(circle,#C8CDD8 1px,transparent 1px);background-size:22px 22px;}
 #cvs{position:absolute;top:0;left:0;cursor:default;}
 .zc{position:absolute;bottom:14px;right:14px;display:flex;flex-direction:column;gap:3px;z-index:5;}
 .zb{width:29px;height:29px;background:var(--bg2);border:1px solid var(--bd);color:var(--tx);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;font-family:var(--m);transition:all .15s;}
@@ -220,7 +220,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 .h{display:flex;align-items:center;gap:4px;}
 .kbd{background:var(--bg4);border:1px solid var(--bd2);border-radius:3px;padding:1px 5px;font-size:10px;color:var(--tx2);}
 
-::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px;}
+::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(242,169,0,.35);border-radius:3px;}
+
+
 </style>
 </head>
 <body>
@@ -228,7 +230,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 
 <!-- TOPBAR -->
 <div class="tb">
-  <div class="logo"><div class="logo-m">⬡</div>NetSchema</div>
+  <div class="logo"><div class="logo-m" style="font-size:13px;font-weight:800;color:#fff;">SF</div>SchémaFlow</div>
   <div class="tb-div"></div>
   <span style="font-size:13px;color:var(--tx2)" id="bc">Nouveau schéma</span>
   <div class="tb-r"><span class="chip c-bl" id="gtag">0 bâtiment</span></div>
@@ -238,9 +240,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 <div class="stps">
   <div class="stp on" id="st1"><div class="stp-n">1</div>Bâtiments</div>
   <span class="stp-a">›</span>
-  <div class="stp" id="st2"><div class="stp-n">2</div>Équipements &amp; noms</div>
+  <div class="stp" id="st2"><div class="stp-n">2</div>Équipements &amp; Nommage</div>
   <span class="stp-a">›</span>
-  <div class="stp" id="st3"><div class="stp-n">3</div>Nommer le site</div>
+  <div class="stp" id="st3"><div class="stp-n">3</div>Nom du site</div>
   <span class="stp-a">›</span>
   <div class="stp" id="st4"><div class="stp-n">4</div>Éditeur de schéma</div>
 </div>
@@ -248,10 +250,10 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 <!-- S1: Bâtiments -->
 <div class="scr on" id="s1">
   <div class="s1b">
-    <div><div class="pgt">Configurer les bâtiments</div><div class="pgs">Ajoutez les bâtiments de votre site réseau</div></div>
+    <div><div class="pgt">Configuration des bâtiments</div><div class="pgs">Définissez les bâtiments et infrastructures de votre site réseau</div></div>
     <div class="add-r">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="color:var(--tx2);flex-shrink:0"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <input id="bIn" placeholder="Nom du bâtiment (ex : Usine, Labo R&D, Agence Paris...)" autocomplete="off"/>
+      <input id="bIn" placeholder="Nom du bâtiment (ex : Carrière Nord, Centrale Enrobés, Agence Régionale...)" autocomplete="off"/>
       <button class="btn bp" onclick="addB()">Ajouter</button>
     </div>
     <div class="bg" id="bGrid"></div>
@@ -271,7 +273,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 <div class="scr" id="s2">
   <div class="s2sd">
     <div class="sdh">
-      <div class="sdtt">Bibliothèque</div>
+      <div class="sdtt">Catalogue d'équipements</div>
       <input class="sds" id="eqSrch" placeholder="Rechercher..." oninput="filterEq(this.value)"/>
     </div>
     <div class="cats" id="cats"></div>
@@ -280,11 +282,11 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
     <div class="s2t">
       <button class="btn bg2c" onclick="gotoStep(1)">← Retour</button>
       <div style="display:flex;gap:6px;overflow-x:auto;max-width:400px" id="bldgTabs"></div>
-      <div style="margin-left:auto;font-size:12px;color:var(--tx2)" id="s2hint">Cliquez pour ajouter · Nommez chaque équipement</div>
+      <div style="margin-left:auto;font-size:12px;color:var(--tx2)" id="s2hint">Cliquez pour ajouter · Saisissez un identifiant unique pour chaque équipement</div>
     </div>
     <div class="s2c" id="s2content">
       <div id="eqSection">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);padding-bottom:8px;border-bottom:1px solid var(--bd);margin-bottom:10px" id="eqSectionTtl">Équipements — 0</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--tx3);padding-bottom:8px;border-bottom:1px solid var(--bd);margin-bottom:10px" id="eqSectionTtl">Équipements — 0</div>
         <div class="eq-name-grid" id="eqGrid"></div>
       </div>
     </div>
@@ -309,17 +311,17 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
   <div class="insp">
     <!-- Tools -->
     <div class="isc">
-      <div class="itt">Mode d'édition</div>
+      <div class="itt">Mode d'interaction</div>
       <div class="tools">
-        <button class="tool on" id="tSel" onclick="setTool('sel')" title="Déplacer les bâtiments">
+        <button class="tool on" id="tSel" onclick="setTool('sel')" title="Sélectionner et déplacer les bâtiments">
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 1.5l8 3-4 1-1 4z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
           Sélection
         </button>
-        <button class="tool" id="tConn" onclick="setTool('conn')" title="Créer un lien entre 2 bâtiments">
+        <button class="tool" id="tConn" onclick="setTool('conn')" title="Créer une connexion entre deux bâtiments">
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="2" cy="2" r="1.5" stroke="currentColor" stroke-width="1.1"/><circle cx="9" cy="9" r="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M3.1 3.1l4.8 4.8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Connecter
         </button>
-        <button class="tool" id="tDel" onclick="setTool('del')" title="Supprimer un lien">
+        <button class="tool" id="tDel" onclick="setTool('del')" title="Supprimer une connexion">
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 1.5l8 8M9.5 1.5l-8 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
           Supr.lien
         </button>
@@ -328,7 +330,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 
     <!-- Spacing -->
     <div class="spacing-ctrl">
-      <div class="itt">Espacement entre bâtiments</div>
+      <div class="itt">Espacement des bâtiments</div>
       <div class="range-row">
         <span class="range-lbl">Serré</span>
         <input type="range" class="rng" id="spacingRange" min="40" max="300" value="100" oninput="onSpacing(this.value)"/>
@@ -349,7 +351,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 
     <!-- Default link style -->
     <div class="isc">
-      <div class="itt">Style par défaut (nouveaux liens)</div>
+      <div class="itt">Style des liens par défaut</div>
       <div style="display:flex;flex-direction:column;gap:7px">
         <div class="prop"><div class="plb">Couleur</div><div class="sws" id="defSws"></div></div>
         <div class="prop"><div class="plb">Ligne</div>
@@ -371,7 +373,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 
     <!-- Inspector -->
     <div class="props" id="propsP">
-      <div class="emp-i2"><div class="ei-i">🔗</div>Sélectionnez un lien<br>pour le personnaliser<br><br>
+      <div class="emp-i2"><div class="ei-i">🔗</div>Sélectionnez une connexion<br>pour la personnaliser<br><br>
         <button class="add-link-btn" onclick="setTool('conn')">+ Ajouter un lien</button>
       </div>
     </div>
@@ -384,9 +386,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
         <div class="dts" id="dgS">—</div>
         <div class="dtm" id="dgM">—</div>
       </div>
-      <button class="btn bs" onclick="autoLayout()">⊞ Auto-layout</button>
-      <button class="btn bs" onclick="fitView()">⊙ Centrer</button>
-      <button class="btn bs" onclick="gotoStep(1)">← Modifier</button>
+      <button class="btn bs" onclick="autoLayout()">⊞ Disposition automatique</button>
+      <button class="btn bs" onclick="fitView()">⊙ Centrer la vue</button>
+      <button class="btn bs" onclick="gotoStep(1)">← Modifier le projet</button>
       <button class="btn bs" onclick="exportPNG()">↓ PNG</button>
       <button class="btn bp" onclick="exportPDF()">↓ PDF</button>
     </div>
@@ -400,30 +402,30 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
       <div class="zlb" id="zlb">100%</div>
     </div>
     <div class="hb">
-      <div class="h"><span class="kbd">Sélection</span>Glisser bâtiments</div>
-      <div class="h"><span class="kbd">Connecter</span>Clic→Clic</div>
-      <div class="h"><span class="kbd">Clic droit</span>Pan</div>
-      <div class="h"><span class="kbd">Molette</span>Zoom</div>
-      <div class="h"><span class="kbd">Ctrl+Z/Y</span>Annuler/Rétablir</div>
+      <div class="h"><span class="kbd">Sélection</span>Glisser pour déplacer</div>
+      <div class="h"><span class="kbd">Connecter</span>Clic sur deux bâtiments</div>
+      <div class="h"><span class="kbd">Clic droit</span>Panoramique</div>
+      <div class="h"><span class="kbd">Molette</span>Zoom avant/arrière</div>
+      <div class="h"><span class="kbd">Ctrl+Z / Ctrl+Y</span>Annuler / Rétablir</div>
     </div>
   </div>
 </div>
-</div>
-
 <!-- NAMING MODAL -->
 <div class="ov" id="nmMod">
   <div class="modal">
-    <div class="mtt">Nommer le site réseau</div>
-    <div class="msb">Ce nom sera affiché comme titre du schéma généré</div>
+    <div class="mtt">Nommer le site</div>
+    <div class="msb">Ce nom apparaîtra comme titre principal sur le schéma exporté</div>
     <div class="fg">
       <label class="fl">Nom du site</label>
-      <input class="fi" id="siteIn" placeholder="Ex : Site de Lyon, Siège Paris, Campus R&D..."/>
+      <input class="fi" id="siteIn" placeholder="Ex : Site de Lyon, Siège Social, Zone Industrielle Bordeaux..."/>
     </div>
     <div class="ma">
       <button class="btn bs" onclick="closeMod()">Annuler</button>
       <button class="btn bp blg" onclick="confirmGen()">Générer →</button>
     </div>
   </div>
+
+
 </div>
 
 <script>
@@ -524,7 +526,7 @@ function wrapText(ctx,t,maxW){
 
 function noteLines(ctx,note,maxW,fontSize){
   if(!note)return[];
-  ctx.save();ctx.font=`400 ${fontSize}px DM Sans,sans-serif`;
+  ctx.save();ctx.font=`400 ${fontSize}px Plus Jakarta Sans,sans-serif`;
   const lines=wrapText(ctx,note,maxW);
   ctx.restore();return lines;
 }
@@ -538,12 +540,12 @@ function nodeSize(eqCount,equipment){
   if(equipment){
     const tempCtx=document.createElement('canvas').getContext('2d');
     equipment.forEach(eq=>{
-      tempCtx.font=`600 11px DM Sans,sans-serif`;
+      tempCtx.font=`600 11px Plus Jakarta Sans,sans-serif`;
       const lbl=eq.label||eq.typeName||'';
       const ll=wrapText(tempCtx,lbl,CEL-8);
       maxLabelLines=Math.max(maxLabelLines,ll.length);
       if(eq.note&&eq.note.trim()){
-        tempCtx.font=`400 9px DM Sans,sans-serif`;
+        tempCtx.font=`400 9px Plus Jakarta Sans,sans-serif`;
         const nl=noteLines(tempCtx,eq.note,CEL-8,9);
         maxNoteLines=Math.max(maxNoteLines,nl.length);
       }
@@ -766,13 +768,13 @@ function renderEqGrid(){
       </div>
       <input class="eq-name-input${!eq.label.trim()?' err':''}" 
         value="${eq.label}"
-        placeholder="ex: core-switch, srv-web, fw-01..."
+        placeholder="ex : core-sw-01, srv-prod, fw-dmz..."
         oninput="updateEqLabel(${eq.uid},this.value);this.classList.toggle('err',!this.value.trim())"
         onblur="updateEqLabel(${eq.uid},this.value)"
       />
       <div class="eq-note-lbl">Note (optionnel)</div>
       <textarea class="eq-note-input"
-        placeholder="IP, VLAN, modèle, remarques..."
+        placeholder="IP, VLAN, modèle, remarques techniques..."
         oninput="updateEqNote(${eq.uid},this.value)"
         onblur="updateEqNote(${eq.uid},this.value)"
       >${eq.note||''}</textarea>
@@ -1058,7 +1060,7 @@ function redo(){if(hIdx>=hist.length-1)return;hIdx++;const s=JSON.parse(hist[hId
 function renderProps(){
   const p=document.getElementById('propsP');
   if(!selEdge){
-    p.innerHTML=`<div class="emp-i2"><div class="ei-i">🔗</div>Sélectionnez un lien<br>pour le personnaliser<br><br>
+    p.innerHTML=`<div class="emp-i2"><div class="ei-i">🔗</div>Sélectionnez une connexion<br>pour la personnaliser<br><br>
       <button class="add-link-btn" onclick="setTool('conn')">+ Ajouter un lien</button>
     </div>`;
     return;
@@ -1146,12 +1148,12 @@ function redraw(){
     const [sx,sy]=ept(connFrom,mw.x,mw.y);
     ctx.save();
     ctx.setLineDash([6/sc,5/sc]);
-    ctx.strokeStyle='rgba(47,129,247,0.6)';ctx.lineWidth=1.5/sc;
+    ctx.strokeStyle='rgba(242,169,0,0.7)';ctx.lineWidth=1.5/sc;
     ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(mw.x,mw.y);ctx.stroke();
     ctx.setLineDash([]);
     ctx.beginPath();ctx.arc(mw.x,mw.y,5/sc,0,Math.PI*2);
-    ctx.fillStyle='rgba(47,129,247,0.35)';ctx.fill();
-    ctx.strokeStyle='rgba(47,129,247,.5)';ctx.lineWidth=2/sc;
+    ctx.fillStyle='rgba(242,169,0,0.28)';ctx.fill();
+    ctx.strokeStyle='rgba(242,169,0,.6)';ctx.lineWidth=2/sc;
     rr(ctx,connFrom.x-4,connFrom.y-4,connFrom.w+8,connFrom.h+8,10);ctx.stroke();
     ctx.restore();
   }
@@ -1173,7 +1175,7 @@ function drawEdge(ctx,ed,isSel){
     ctx.beginPath();
     if(ed.curved!==false){ctx.moveTo(sx,sy);ctx.bezierCurveTo(mx,sy,mx,ey,ex,ey);}
     else{ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);}
-    ctx.strokeStyle='rgba(47,129,247,.35)';ctx.lineWidth=(lw+7)/sc;ctx.setLineDash([]);ctx.stroke();
+    ctx.strokeStyle='rgba(242,169,0,.45)';ctx.lineWidth=(lw+7)/sc;ctx.setLineDash([]);ctx.stroke();
   }
 
   if(ed.style==='double'){
@@ -1211,14 +1213,14 @@ function drawEdge(ctx,ed,isSel){
   // Label
   if(ed.label){
     ctx.save();
-    const fs=12;ctx.font=`500 ${fs}px DM Sans,sans-serif`;
+    const fs=12;ctx.font=`500 ${fs}px Plus Jakarta Sans,sans-serif`;
     ctx.textAlign='center';ctx.textBaseline='middle';
     const lx=mx,ly=(sy+ey)/2-15/sc;
     const tw=ctx.measureText(ed.label).width+10/sc,th=18/sc;
     rr(ctx,lx-tw/2,ly-th/2,tw,th,th/2);
     ctx.fillStyle='rgba(255,255,255,.95)';ctx.fill();
     ctx.strokeStyle=ed.color;ctx.lineWidth=1/sc;ctx.stroke();
-    ctx.fillStyle='#1a1a2e';ctx.fillText(ed.label,lx,ly);
+    ctx.fillStyle='#1A1D27';ctx.fillText(ed.label,lx,ly);
     ctx.restore();
   }
   ctx.restore();
@@ -1246,9 +1248,9 @@ function drawNode(ctx,nd,isSel){
 
   // Border
   rr(ctx,x,y,w,h,R);
-  ctx.strokeStyle=isSel?'rgba(47,129,247,.9)':connFrom?.id===nd.id?'rgba(47,129,247,.8)':'#d0d7de';
+  ctx.strokeStyle=isSel?'rgba(242,169,0,.9)':connFrom?.id===nd.id?'rgba(242,169,0,.8)':'#D1D5DB';
   ctx.lineWidth=(isSel?2.5:connFrom?.id===nd.id?2:1.5)/sc;
-  if(isSel||connFrom?.id===nd.id){ctx.shadowColor='rgba(47,129,247,.35)';ctx.shadowBlur=16;}
+  if(isSel||connFrom?.id===nd.id){ctx.shadowColor='rgba(242,169,0,.4)';ctx.shadowBlur=16;}
   ctx.stroke();ctx.shadowBlur=0;
 
   // Header gradient
@@ -1258,13 +1260,13 @@ function drawNode(ctx,nd,isSel){
   ctx.quadraticCurveTo(x+w,y,x+w,y+R);ctx.lineTo(x+w,y+NH);ctx.lineTo(x,y+NH);
   ctx.lineTo(x,y+R);ctx.quadraticCurveTo(x,y,x+R,y);ctx.closePath();
   const hg=ctx.createLinearGradient(x,y,x,y+NH);
-  hg.addColorStop(0,'#1e3a8a');hg.addColorStop(1,'#1d4ed8');
+  hg.addColorStop(0,'#F2A900');hg.addColorStop(1,'#D4830A');
   ctx.fillStyle=hg;ctx.fill();ctx.restore();
 
   // Building label in header — no emoji, full name centered
   ctx.save();
   ctx.fillStyle='#fff';
-  ctx.font=`700 ${13}px DM Sans,sans-serif`;
+  ctx.font=`700 ${13}px Plus Jakarta Sans,sans-serif`;
   ctx.textBaseline='middle';ctx.textAlign='center';
   ctx.fillText(trunc(ctx,label,w-NP*2),x+w/2,y+NH/2);
   ctx.restore();
@@ -1282,7 +1284,7 @@ function drawNode(ctx,nd,isSel){
     const rowEqs=equipment.slice(r*CPR,(r+1)*CPR);
     let maxLL=1,maxNL=0;
     rowEqs.forEach(eq=>{
-      ctx.font=`600 11px DM Sans,sans-serif`;
+      ctx.font=`600 11px Plus Jakarta Sans,sans-serif`;
       const ll=wrapText(ctx,eq.label||eq.typeName||'',CEL-8);
       maxLL=Math.max(maxLL,ll.length);
       if(eq.note&&eq.note.trim()){
@@ -1310,7 +1312,7 @@ function drawNode(ctx,nd,isSel){
       // Icon background circle
       ctx.save();
       ctx.beginPath();ctx.arc(cx2,iconCY,ISIZ/2+4,0,Math.PI*2);
-      ctx.fillStyle='rgba(219,234,254,.65)';ctx.fill();
+      ctx.fillStyle='rgba(255,236,180,.55)';ctx.fill();
       ctx.restore();
 
       drawIcon(ctx,eq.icon,cx2-ISIZ/2,iconCY-ISIZ/2,ISIZ);
@@ -1319,7 +1321,7 @@ function drawNode(ctx,nd,isSel){
       const labelTop=rowTopY+8+ISIZ+6;
       ctx.save();
       ctx.fillStyle='#1e293b';
-      ctx.font=`600 11px DM Sans,sans-serif`;
+      ctx.font=`600 11px Plus Jakarta Sans,sans-serif`;
       ctx.textAlign='center';ctx.textBaseline='top';
       const lblLines=wrapText(ctx,eq.label||eq.typeName||'',CEL-6);
       lblLines.forEach((ln,li)=>ctx.fillText(ln,cx2,labelTop+li*13));
@@ -1330,7 +1332,7 @@ function drawNode(ctx,nd,isSel){
         const noteTop=labelTop+lblLines.length*13+2;
         ctx.save();
         ctx.fillStyle='#64748b';
-        ctx.font=`400 9px DM Sans,sans-serif`;
+        ctx.font=`400 9px Plus Jakarta Sans,sans-serif`;
         ctx.textAlign='center';ctx.textBaseline='top';
         const nl=noteLines(ctx,eq.note,CEL-8,9);
         nl.forEach((ln,li)=>ctx.fillText(ln,cx2,noteTop+li*11));
@@ -1609,7 +1611,7 @@ function buildOffCanvas(titleH){
   ctx.scale(S,S);
 
   // Fond
-  ctx.fillStyle='#eef2f7'; ctx.fillRect(0,0,cW,cH+titleH);
+  ctx.fillStyle='#F5F6F8'; ctx.fillRect(0,0,cW,cH+titleH);
   ctx.fillStyle='rgba(100,120,150,0.2)';
   for(let gx=0;gx<=cW;gx+=22)
     for(let gy=titleH;gy<=cH+titleH;gy+=22){
@@ -1618,12 +1620,12 @@ function buildOffCanvas(titleH){
 
   // Titre
   if(titleH>0){
-    ctx.fillStyle='#1e293b'; ctx.fillRect(0,0,cW,titleH);
+    ctx.fillStyle='#F2A900'; ctx.fillRect(0,0,cW,titleH);
     ctx.fillStyle='#fff';
-    ctx.font=`bold 22px DM Sans,sans-serif`;
+    ctx.font=`bold 22px Plus Jakarta Sans,sans-serif`;
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(siteName, cW/2, titleH*0.4);
-    ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.fillStyle='rgba(26,29,39,0.55)';
     ctx.font=`12px JetBrains Mono,monospace`;
     ctx.fillText(
       `${nodes.length} bâtiment${nodes.length>1?'s':''} · `+
@@ -1665,8 +1667,8 @@ function exportPDF(){
   const img=c.toDataURL('image/png');
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${siteName}</title>
-  <style>*{margin:0;padding:0;}body{background:white;font-family:'DM Sans',sans-serif;padding:32px;display:flex;flex-direction:column;align-items:center;}
-  .hdr{text-align:center;margin-bottom:22px;}h1{font-size:22px;font-weight:700;color:#0d1117;margin-bottom:5px;}.m{font-size:11px;color:#6e7681;font-family:monospace;}
+  <style>*{margin:0;padding:0;}body{background:white;font-family:'Plus Jakarta Sans',sans-serif;padding:32px;display:flex;flex-direction:column;align-items:center;}
+  .hdr{text-align:center;margin-bottom:22px;}h1{font-size:22px;font-weight:700;color:#1A1D27;margin-bottom:5px;}.m{font-size:11px;color:#6e7681;font-family:monospace;}
   img{max-width:100%;border:1px solid #e0e0e0;border-radius:8px;}</style></head><body>
   <div class="hdr"><h1>${siteName}</h1><div class="m">Schéma réseau · ${nodes.length} bâtiments · ${nodes.reduce((s,n)=>s+n.equipment.length,0)} équipements · ${new Date().toLocaleDateString('fr-FR')}</div></div>
   <img src="${img}"/>
