@@ -222,6 +222,64 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 .kbd{background:var(--bg4);border:1px solid var(--bd2);border-radius:3px;padding:1px 5px;font-size:10px;color:var(--tx2);}
 
 ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:#CCCCCC;border-radius:3px;}
+
+/* ═══ IA BETA BUTTON ═══ */
+.ia-beta-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  background:linear-gradient(135deg,#7C3AED,#a855f7);
+  color:#fff;border:none;border-radius:7px;
+  padding:6px 13px;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:var(--f);
+  box-shadow:0 2px 10px rgba(124,58,237,.35);
+  transition:all .18s;letter-spacing:.2px;
+  animation:pulse-ia 2.5s infinite;
+}
+.ia-beta-btn:hover{background:linear-gradient(135deg,#6D28D9,#9333ea);transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,58,237,.5);}
+@keyframes pulse-ia{0%,100%{box-shadow:0 2px 10px rgba(124,58,237,.35);}50%{box-shadow:0 2px 18px rgba(124,58,237,.6);}}
+.ia-beta-dot{width:7px;height:7px;background:#fff;border-radius:50%;animation:blink-ia 1.2s infinite;}
+@keyframes blink-ia{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* ═══ IA SCREEN ═══ */
+#sIA{flex-direction:column;background:var(--bg);}
+.ia-header{height:52px;background:linear-gradient(90deg,#7C3AED10,#a855f710);border-bottom:2px solid #7C3AED40;display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;}
+.ia-header-icon{width:34px;height:34px;background:linear-gradient(135deg,#7C3AED,#a855f7);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 10px rgba(124,58,237,.3);}
+.ia-header-title{font-size:15px;font-weight:800;color:var(--pu);}
+.ia-header-sub{font-size:12px;color:var(--tx2);}
+.ia-badge{background:rgba(124,58,237,.12);color:var(--pu);border:1px solid rgba(124,58,237,.3);border-radius:20px;font-size:10px;font-weight:700;padding:2px 8px;}
+.ia-body{flex:1;display:flex;overflow:hidden;}
+.ia-chat{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.ia-msgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;}
+.ia-msg{display:flex;gap:10px;max-width:680px;}
+.ia-msg.user{flex-direction:row-reverse;align-self:flex-end;}
+.ia-bubble{padding:11px 15px;border-radius:12px;font-size:13px;line-height:1.6;max-width:100%;}
+.ia-msg.ai .ia-bubble{background:var(--bg2);border:1px solid var(--bd);border-radius:4px 12px 12px 12px;}
+.ia-msg.user .ia-bubble{background:linear-gradient(135deg,#7C3AED,#a855f7);color:#fff;border-radius:12px 4px 12px 12px;}
+.ia-avatar{width:32px;height:32px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.ia-msg.ai .ia-avatar{background:linear-gradient(135deg,#7C3AED,#a855f7);}
+.ia-msg.user .ia-avatar{background:var(--bg3);border:1px solid var(--bd);font-size:12px;}
+.ia-input-row{padding:14px 20px;border-top:1px solid var(--bd);background:var(--bg2);display:flex;gap:10px;align-items:flex-end;}
+.ia-input{flex:1;background:#fff;border:1.5px solid var(--bd);border-radius:10px;padding:10px 14px;font-family:var(--f);font-size:13px;color:var(--tx);outline:none;resize:none;min-height:42px;max-height:120px;line-height:1.5;transition:border-color .15s;}
+.ia-input:focus{border-color:rgba(124,58,237,.6);box-shadow:0 0 0 3px rgba(124,58,237,.12);}
+.ia-input::placeholder{color:var(--tx3);}
+.ia-send{width:42px;height:42px;background:linear-gradient(135deg,#7C3AED,#a855f7);border:none;border-radius:10px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:16px;}
+.ia-send:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.4);}
+.ia-send:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.ia-thinking{display:flex;gap:4px;align-items:center;padding:4px 0;}
+.ia-thinking span{width:7px;height:7px;background:#a855f7;border-radius:50%;animation:think .9s infinite;}
+.ia-thinking span:nth-child(2){animation-delay:.2s;}
+.ia-thinking span:nth-child(3){animation-delay:.4s;}
+@keyframes think{0%,80%,100%{transform:scale(.7);opacity:.4;}40%{transform:scale(1.1);opacity:1;}}
+.ia-schema-preview{background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-top:8px;}
+.ia-schema-preview-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tx2);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.ia-bldg-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+.ia-bldg-chip{background:#fff;border:1px solid rgba(124,58,237,.25);border-radius:7px;padding:6px 10px;font-size:12px;}
+.ia-bldg-chip strong{color:var(--pu);display:block;font-size:11px;margin-bottom:3px;}
+.ia-eq-tag{display:inline-block;background:rgba(124,58,237,.08);border-radius:3px;padding:1px 5px;font-size:11px;color:var(--pu);margin:1px;}
+.ia-apply-btn{width:100%;padding:9px;background:linear-gradient(135deg,#7C3AED,#a855f7);color:#fff;border:none;border-radius:8px;font-family:var(--f);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:10px;}
+.ia-apply-btn:hover{opacity:.9;transform:translateY(-1px);}
+.ia-suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:0 20px 12px;}
+.ia-sug{background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.2);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--pu);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.ia-sug:hover{background:rgba(124,58,237,.15);}
 </style>
 </head>
 <body>
@@ -232,7 +290,13 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
   <div class="logo"><div class="logo-m" style="font-size:12px;font-weight:800;color:#1A1D27;">SF</div>SchémaFlow</div>
   <div class="tb-div"></div>
   <span style="font-size:13px;color:var(--tx2)" id="bc">Nouveau schéma</span>
-  <div class="tb-r"><span class="chip c-bl" id="gtag">0 bâtiment</span></div>
+  <div class="tb-r">
+    <button class="ia-beta-btn" onclick="gotoIA()">
+      <div class="ia-beta-dot"></div>
+      ✦ IA BETA
+    </button>
+    <span class="chip c-bl" id="gtag">0 bâtiment</span>
+  </div>
 </div>
 
 <!-- STEPS -->
@@ -411,6 +475,41 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 </div>
 </div>
 
+<!-- IA BETA SCREEN -->
+<div class="scr" id="sIA">
+  <div class="ia-header">
+    <div class="ia-header-icon">✦</div>
+    <div>
+      <div class="ia-header-title">Assistant IA — Génération de schéma</div>
+      <div class="ia-header-sub">Décrivez votre réseau en langage naturel</div>
+    </div>
+    <span class="ia-badge">BETA</span>
+    <div style="margin-left:auto">
+      <button class="btn bs" onclick="gotoStep(1)" style="font-size:12px">← Retour à l'éditeur</button>
+    </div>
+  </div>
+  <div class="ia-body">
+    <div class="ia-chat">
+      <div class="ia-msgs" id="iaMsgs"></div>
+      <div class="ia-suggestions" id="iaSugs">
+        <span class="ia-sug" onclick="iaSuggest(this)">2 bâtiments, serveur + switch chacun</span>
+        <span class="ia-sug" onclick="iaSuggest(this)">Siège + agence distante avec firewall</span>
+        <span class="ia-sug" onclick="iaSuggest(this)">Campus 3 bâtiments avec WiFi et NAS</span>
+        <span class="ia-sug" onclick="iaSuggest(this)">Data center avec routeur, firewall, 4 serveurs</span>
+      </div>
+      <div class="ia-input-row">
+        <textarea class="ia-input" id="iaInput" placeholder="Ex : J'ai un bâtiment principal avec un routeur, un firewall, 2 switchs et 5 PC. Un second bâtiment avec un NAS et 3 serveurs. Reliés par fibre." rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();iaSend();}"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"
+        ></textarea>
+        <button class="ia-send" id="iaSendBtn" onclick="iaSend()" title="Envoyer">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 8L2 2l2.5 6L2 14l12-6z" fill="currentColor"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- NAMING MODAL -->
 <div class="ov" id="nmMod">
   <div class="modal">
@@ -580,7 +679,7 @@ function init(){
 // ════════════════════════════════════════════
 function gotoStep(n){
   curStep=n;
-  ['s1','s2','s3'].forEach((id,i)=>{
+  ['s1','s2','s3','sIA'].forEach((id,i)=>{
     document.getElementById(id).classList.toggle('on',i+1===n);
   });
   [1,2,3,4].forEach(i=>{
@@ -812,7 +911,7 @@ function confirmGen(){
 // ════════════════════════════════════════════
 function initDiag(){
   // Update steps visual
-  ['s1','s2','s3'].forEach((id,i)=>document.getElementById(id).classList.toggle('on',id==='s3'));
+  ['s1','s2','s3','sIA'].forEach((id)=>document.getElementById(id).classList.toggle('on',id==='s3'));
   [1,2,3,4].forEach(i=>{
     const el=document.getElementById('st'+i);
     el.classList.remove('on','done');
@@ -1697,6 +1796,198 @@ window.addEventListener('resize',()=>{
   const cvs=document.getElementById('cvs');
   cvs.width=area.clientWidth;cvs.height=area.clientHeight;redraw();
 });
+
+// ════════════════════════════════════════════
+// IA BETA
+// ════════════════════════════════════════════
+let iaHistory=[];
+
+function gotoIA(){
+  ['s1','s2','s3','sIA'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  document.getElementById('sIA').classList.add('on');
+  if(!iaHistory.length) iaWelcome();
+}
+
+function iaWelcome(){
+  iaAddMsg('ai',`Bonjour ! Je suis votre assistant IA pour <strong>SchémaFlow</strong>. 🏗️<br><br>
+    Décrivez votre réseau en langage naturel et je génèrerai automatiquement un schéma complet, prêt à modifier.<br><br>
+    Vous pouvez préciser :<br>
+    • Le nombre et nom des <strong>bâtiments</strong><br>
+    • Les <strong>équipements</strong> dans chaque bâtiment (routeur, switch, firewall, serveurs, PC, NAS, WiFi, UPS, imprimantes, caméras, téléphones, cloud…)<br>
+    • Les <strong>noms personnalisés</strong> de chaque équipement<br>
+    • Le <strong>nom du site</strong> (optionnel)`);
+}
+
+function iaSuggest(el){
+  document.getElementById('iaInput').value=el.textContent;
+  document.getElementById('iaInput').focus();
+}
+
+function iaAddMsg(role, html, extraNode=null){
+  const container=document.getElementById('iaMsgs');
+  const div=document.createElement('div');
+  div.className='ia-msg '+(role==='user'?'user':'ai');
+  const avatar=document.createElement('div');
+  avatar.className='ia-avatar';
+  avatar.textContent=role==='user'?'👤':'✦';
+  const bubble=document.createElement('div');
+  bubble.className='ia-bubble';
+  bubble.innerHTML=html;
+  if(extraNode) bubble.appendChild(extraNode);
+  if(role==='user'){div.appendChild(bubble);div.appendChild(avatar);}
+  else{div.appendChild(avatar);div.appendChild(bubble);}
+  container.appendChild(div);
+  container.scrollTop=container.scrollHeight;
+  return bubble;
+}
+
+function iaThinking(){
+  const container=document.getElementById('iaMsgs');
+  const div=document.createElement('div');
+  div.className='ia-msg ai';div.id='iaThinking';
+  div.innerHTML=`<div class="ia-avatar">✦</div><div class="ia-bubble"><div class="ia-thinking"><span></span><span></span><span></span></div></div>`;
+  container.appendChild(div);
+  container.scrollTop=container.scrollHeight;
+}
+
+function iaRemoveThinking(){
+  const el=document.getElementById('iaThinking');
+  if(el)el.remove();
+}
+
+async function iaSend(){
+  const inp=document.getElementById('iaInput');
+  const msg=inp.value.trim();
+  if(!msg)return;
+  inp.value='';inp.style.height='auto';
+  document.getElementById('iaSendBtn').disabled=true;
+  document.getElementById('iaSugs').style.display='none';
+
+  iaAddMsg('user', msg.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'));
+  iaHistory.push({role:'user',content:msg});
+
+  iaThinking();
+
+  const systemPrompt=`Tu es un assistant expert en réseaux informatiques intégré à SchémaFlow, un outil de génération de schémas réseau.
+
+Ton unique rôle est d'analyser la description d'un réseau fournie par l'utilisateur et de générer un objet JSON structuré représentant ce réseau.
+
+Types d'équipements disponibles (utilise EXACTEMENT ces id et icon) :
+- Réseau : router (Routeur), switch (Switch), firewall (Firewall), wifi (Borne WiFi), cloud (Cloud/Internet)
+- Serveurs : server (Serveur), nas (NAS), ups (Onduleur UPS)
+- Postes : pc (Poste PC), printer (Imprimante), phone (Téléphone IP), camera (Caméra IP)
+
+Réponds TOUJOURS en JSON valide, sans aucun texte avant ou après, avec ce format exact :
+{
+  "siteName": "Nom du site réseau",
+  "buildings": [
+    {
+      "name": "Nom du bâtiment",
+      "equipment": [
+        {"typeId": "router", "typeName": "Routeur", "icon": "router", "label": "nom-personnalisé"},
+        ...
+      ]
+    }
+  ],
+  "message": "Message court et amical expliquant ce que tu as généré (en français, HTML simple autorisé)"
+}
+
+Règles :
+- Déduis des noms de labels intelligents (ex: fw-01, core-sw, srv-web, pc-bureau-1...)
+- Si le nom du site n'est pas précisé, invente-en un pertinent
+- Si l'utilisateur pose une question hors-sujet, retourne quand même le JSON avec buildings:[] et explique dans message
+- Génère au minimum 1 bâtiment avec au moins 1 équipement si la description le permet`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        system: systemPrompt,
+        messages: iaHistory
+      })
+    });
+    const data=await response.json();
+    iaRemoveThinking();
+
+    let raw=(data.content||[]).map(b=>b.text||'').join('');
+    raw=raw.replace(/```json|```/g,'').trim();
+
+    let parsed=null;
+    try { parsed=JSON.parse(raw); } catch(e) { parsed=null; }
+
+    if(parsed && parsed.buildings){
+      // Show message
+      iaAddMsg('ai', parsed.message || 'Voici le schéma généré !');
+      iaHistory.push({role:'assistant', content: parsed.message || 'Schéma généré.'});
+
+      // Show preview if buildings exist
+      if(parsed.buildings.length>0){
+        const preview=iaRenderPreview(parsed);
+        const lastBubble=document.getElementById('iaMsgs').lastElementChild.querySelector('.ia-bubble');
+        lastBubble.appendChild(preview);
+        document.getElementById('iaMsgs').scrollTop=document.getElementById('iaMsgs').scrollHeight;
+      }
+    } else {
+      iaAddMsg('ai','Désolé, je n\'ai pas pu générer un schéma valide. Pouvez-vous reformuler votre description ?');
+    }
+  } catch(err) {
+    iaRemoveThinking();
+    iaAddMsg('ai','Une erreur est survenue. Vérifiez votre connexion et réessayez.');
+  }
+  document.getElementById('iaSendBtn').disabled=false;
+}
+
+function iaRenderPreview(parsed){
+  const div=document.createElement('div');
+  div.className='ia-schema-preview';
+
+  const total=parsed.buildings.reduce((s,b)=>s+b.equipment.length,0);
+  div.innerHTML=`<div class="ia-schema-preview-title">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1L7.5 4.5H11L8.5 7L9.5 11L6 9L2.5 11L3.5 7L1 4.5H4.5L6 1Z" fill="currentColor" opacity=".7"/></svg>
+    Schéma généré — ${parsed.siteName} — ${parsed.buildings.length} bâtiment${parsed.buildings.length>1?'s':''} · ${total} équipement${total>1?'s':''}
+  </div>
+  <div class="ia-bldg-row">${parsed.buildings.map(b=>`
+    <div class="ia-bldg-chip">
+      <strong>🏢 ${b.name}</strong>
+      ${b.equipment.map(e=>`<span class="ia-eq-tag">${e.label}</span>`).join('')}
+    </div>`).join('')}</div>`;
+
+  const btn=document.createElement('button');
+  btn.className='ia-apply-btn';
+  btn.textContent='⚡ Appliquer ce schéma et l\'éditer';
+  btn.onclick=()=>iaApply(parsed);
+  div.appendChild(btn);
+  return div;
+}
+
+function iaApply(parsed){
+  // Inject into buildings state
+  buildings=parsed.buildings.map(b=>({
+    id: Date.now()+Math.random(),
+    name: b.name,
+    equipment: b.equipment.map(e=>({
+      uid: Date.now()+Math.random(),
+      typeId: e.typeId,
+      typeName: e.typeName,
+      icon: e.icon,
+      label: e.label,
+      note: e.note||''
+    }))
+  }));
+  siteName=parsed.siteName||'Mon réseau';
+
+  // Go directly to diagram
+  ['s1','s2','s3','sIA'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  renderBldgs();
+  initDiag();
+}
+
+window.gotoIA=gotoIA;
+window.iaSend=iaSend;
+window.iaSuggest=iaSuggest;
 
 init();
 </script>
