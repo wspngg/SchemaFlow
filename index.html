@@ -1901,29 +1901,41 @@ Règles :
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method:"POST",
-      headers:{"Content-Type":"application/json"},
+      headers:{
+        "Content-Type":"application/json",
+        "anthropic-version":"2023-06-01"
+      },
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514",
-        max_tokens:1000,
+        max_tokens:1500,
         system: systemPrompt,
         messages: iaHistory
       })
     });
+
+    if(!response.ok){
+      const errData=await response.json().catch(()=>({}));
+      throw new Error(errData?.error?.message || `HTTP ${response.status}`);
+    }
+
     const data=await response.json();
     iaRemoveThinking();
 
     let raw=(data.content||[]).map(b=>b.text||'').join('');
-    raw=raw.replace(/```json|```/g,'').trim();
+    raw=raw.replace(/```json[\s\S]*?```|```[\s\S]*?```/g, m => m.replace(/```json\n?|```\n?/g,'')).trim();
+    // Fallback: extract first JSON object if surrounded by text
+    if(!raw.startsWith('{')){
+      const match=raw.match(/\{[\s\S]*\}/);
+      if(match) raw=match[0];
+    }
 
     let parsed=null;
     try { parsed=JSON.parse(raw); } catch(e) { parsed=null; }
 
     if(parsed && parsed.buildings){
-      // Show message
       iaAddMsg('ai', parsed.message || 'Voici le schéma généré !');
-      iaHistory.push({role:'assistant', content: parsed.message || 'Schéma généré.'});
+      iaHistory.push({role:'assistant', content: raw});
 
-      // Show preview if buildings exist
       if(parsed.buildings.length>0){
         const preview=iaRenderPreview(parsed);
         const lastBubble=document.getElementById('iaMsgs').lastElementChild.querySelector('.ia-bubble');
@@ -1935,7 +1947,8 @@ Règles :
     }
   } catch(err) {
     iaRemoveThinking();
-    iaAddMsg('ai','Une erreur est survenue. Vérifiez votre connexion et réessayez.');
+    iaAddMsg('ai',`Une erreur est survenue : <em>${err.message||'Vérifiez votre connexion'}</em>. Ce mode IA fonctionne uniquement dans l'environnement Claude Artifact.`);
+    console.error('IA Error:', err);
   }
   document.getElementById('iaSendBtn').disabled=false;
 }
