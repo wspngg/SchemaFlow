@@ -220,6 +220,46 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
 
 ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:#CCCCCC;border-radius:3px;}
 
+/* ═══ API KEY BANNER ═══ */
+.ia-apikey-banner{
+  background:linear-gradient(135deg,rgba(124,58,237,.07),rgba(168,85,247,.05));
+  border-bottom:1px solid rgba(124,58,237,.2);
+  padding:12px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;
+  animation:fdi .3s ease;
+}
+.ia-apikey-banner.hidden{display:none;}
+.ia-apikey-icon{font-size:18px;flex-shrink:0;}
+.ia-apikey-info{flex:1;min-width:0;}
+.ia-apikey-title{font-size:12px;font-weight:700;color:var(--pu);margin-bottom:2px;}
+.ia-apikey-sub{font-size:11px;color:var(--tx2);line-height:1.4;}
+.ia-apikey-sub a{color:var(--pu);text-decoration:none;}
+.ia-apikey-sub a:hover{text-decoration:underline;}
+.ia-apikey-row{display:flex;gap:7px;align-items:center;flex-shrink:0;}
+.ia-apikey-input{
+  background:#fff;border:1.5px solid rgba(124,58,237,.3);border-radius:7px;
+  padding:7px 12px;font-family:var(--m);font-size:12px;color:var(--tx);
+  outline:none;width:260px;transition:border-color .15s;
+  letter-spacing:.5px;
+}
+.ia-apikey-input:focus{border-color:var(--pu);box-shadow:0 0 0 3px rgba(124,58,237,.12);}
+.ia-apikey-input::placeholder{color:var(--tx3);letter-spacing:0;font-family:var(--f);}
+.ia-apikey-save{
+  background:linear-gradient(135deg,#7C3AED,#a855f7);color:#fff;border:none;
+  border-radius:7px;padding:7px 13px;font-family:var(--f);font-size:12px;
+  font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.ia-apikey-save:hover{background:linear-gradient(135deg,#6D28D9,#9333ea);box-shadow:0 2px 10px rgba(124,58,237,.4);}
+.ia-apikey-ok{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.25);
+  border-radius:7px;padding:5px 11px;font-size:12px;color:var(--gn);font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;
+}
+.ia-apikey-ok:hover{background:rgba(22,163,74,.15);}
+.ia-apikey-ok-dot{width:7px;height:7px;background:var(--gn);border-radius:50%;animation:blink-ia 1.5s infinite;}
+.ia-apikey-change{font-size:11px;color:var(--tx3);cursor:pointer;text-decoration:underline;margin-left:4px;}
+.ia-apikey-change:hover{color:var(--tx2);}
+
 /* ═══ IA BETA BUTTON ═══ */
 .ia-beta-btn{
   display:inline-flex;align-items:center;gap:7px;
@@ -471,6 +511,32 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;}
       <button class="btn bs" onclick="gotoStep(1)" style="font-size:12px">← Retour à l'éditeur</button>
     </div>
   </div>
+  <!-- Bannière clé API -->
+  <div class="ia-apikey-banner" id="iaKeyBanner">
+    <div class="ia-apikey-icon">🔑</div>
+    <div class="ia-apikey-info">
+      <div class="ia-apikey-title">Clé API Anthropic requise</div>
+      <div class="ia-apikey-sub">Obtenez votre clé sur <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> · Stockée localement dans votre navigateur, jamais envoyée ailleurs</div>
+    </div>
+    <div class="ia-apikey-row">
+      <input class="ia-apikey-input" id="iaKeyInput" type="password" placeholder="sk-ant-api03-…" autocomplete="off" onkeydown="if(event.key==='Enter')iaSaveKey()"/>
+      <button class="ia-apikey-save" onclick="iaSaveKey()">Enregistrer</button>
+    </div>
+  </div>
+  <!-- Bannière clé API confirmée -->
+  <div class="ia-apikey-banner hidden" id="iaKeyOkBanner">
+    <div class="ia-apikey-icon">✅</div>
+    <div class="ia-apikey-info">
+      <div class="ia-apikey-title">Clé API configurée</div>
+      <div class="ia-apikey-sub" id="iaKeyOkSub">L'assistant IA est prêt à l'emploi.</div>
+    </div>
+    <div class="ia-apikey-ok" onclick="iaEditKey()">
+      <span class="ia-apikey-ok-dot"></span>
+      Connecté
+      <span class="ia-apikey-change">Modifier</span>
+    </div>
+  </div>
+
   <div class="ia-body">
     <div class="ia-chat">
       <div class="ia-msgs" id="iaMsgs"></div>
@@ -1590,13 +1656,52 @@ window.addEventListener('resize',()=>{
 });
 
 // ════════════════════════════════════════════
-// IA BETA — Appel via l'API Anthropic (fonctionne dans Claude Artifact)
+// IA BETA — Appel via l'API Anthropic
 // ════════════════════════════════════════════
 let iaHistory=[];
+
+// ── Gestion clé API ──
+function iaGetKey(){ return localStorage.getItem('sf_anthropic_key')||''; }
+
+function iaCheckKey(){
+  const key=iaGetKey();
+  if(key && key.startsWith('sk-')){
+    document.getElementById('iaKeyBanner').classList.add('hidden');
+    document.getElementById('iaKeyOkBanner').classList.remove('hidden');
+    const masked='sk-ant-…'+key.slice(-6);
+    document.getElementById('iaKeyOkSub').textContent='Clé : '+masked+' · Stockée dans votre navigateur.';
+    return true;
+  } else {
+    document.getElementById('iaKeyBanner').classList.remove('hidden');
+    document.getElementById('iaKeyOkBanner').classList.add('hidden');
+    return false;
+  }
+}
+
+function iaSaveKey(){
+  const input=document.getElementById('iaKeyInput');
+  const val=input.value.trim();
+  if(!val || !val.startsWith('sk-')){
+    input.style.borderColor='var(--rd)';
+    input.placeholder='Clé invalide — commence par sk-ant-…';
+    setTimeout(()=>{input.style.borderColor='';input.placeholder='sk-ant-api03-…';},2000);
+    return;
+  }
+  localStorage.setItem('sf_anthropic_key', val);
+  input.value='';
+  iaCheckKey();
+}
+
+function iaEditKey(){
+  localStorage.removeItem('sf_anthropic_key');
+  iaCheckKey();
+  setTimeout(()=>document.getElementById('iaKeyInput').focus(),100);
+}
 
 function gotoIA(){
   ['s1','s2','s3','sIA'].forEach(id=>document.getElementById(id).classList.remove('on'));
   document.getElementById('sIA').classList.add('on');
+  iaCheckKey();
   if(!iaHistory.length) iaWelcome();
 }
 
@@ -1651,6 +1756,15 @@ async function iaSend(){
   const inp=document.getElementById('iaInput');
   const msg=inp.value.trim();
   if(!msg)return;
+
+  const apiKey=iaGetKey();
+  if(!apiKey || !apiKey.startsWith('sk-')){
+    iaCheckKey();
+    document.getElementById('iaKeyInput').focus();
+    iaAddMsg('ai','⚠️ Veuillez d\'abord entrer votre clé API Anthropic dans le bandeau ci-dessus.');
+    return;
+  }
+
   inp.value='';inp.style.height='auto';
   document.getElementById('iaSendBtn').disabled=true;
   document.getElementById('iaSugs').style.display='none';
@@ -1695,7 +1809,8 @@ Règles :
       method:"POST",
       headers:{
         "Content-Type":"application/json",
-        "anthropic-version":"2023-06-01"
+        "anthropic-version":"2023-06-01",
+        "x-api-key": apiKey
       },
       body: JSON.stringify({
         model:"claude-sonnet-4-20250514",
@@ -1707,6 +1822,13 @@ Règles :
 
     if(!response.ok){
       const errData=await response.json().catch(()=>({}));
+      if(response.status===401){
+        iaRemoveThinking();
+        iaEditKey();
+        iaAddMsg('ai','❌ Clé API invalide ou expirée. Veuillez entrer une nouvelle clé dans le bandeau ci-dessus.');
+        document.getElementById('iaSendBtn').disabled=false;
+        return;
+      }
       throw new Error(errData?.error?.message || `HTTP ${response.status}`);
     }
 
@@ -1787,6 +1909,8 @@ function iaApply(parsed){
 window.gotoIA=gotoIA;
 window.iaSend=iaSend;
 window.iaSuggest=iaSuggest;
+window.iaSaveKey=iaSaveKey;
+window.iaEditKey=iaEditKey;
 
 init();
 </script>
