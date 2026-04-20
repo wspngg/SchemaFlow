@@ -1589,74 +1589,142 @@ window.addEventListener('resize',()=>{
   cvs.width=area.clientWidth;cvs.height=area.clientHeight;redraw();
 });
 
-// ════════════════════════════════════════════
-// IA LOCALE — Moteur de génération de schéma
-// 100% gratuit, sans API, sans clé
-// ════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
+// IA LOCALE v2 — Moteur de génération de schéma réseau
+// 100% gratuit · Sans API · Multi-passes · Intelligent
+// ════════════════════════════════════════════════════════════
 
-// ── Normalisation du texte ──
+// ── Normalisation ──
 function iaNorm(s){
-  return s.toLowerCase()
+  return (s||'').toLowerCase()
     .replace(/[éèêë]/g,'e').replace(/[àâä]/g,'a')
     .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
     .replace(/[ùûü]/g,'u').replace(/ç/g,'c')
-    .replace(/[''']/g,' ').replace(/-/g,' ');
+    .replace(/['''`]/g,' ').replace(/[-–—]/g,' ');
+}
+
+// ── Correction typos fréquentes ──
+const IA_TYPOS={
+  'routeur':['routuer','routeur','routuer','roueteur','rauteur'],
+  'switch':['swich','swith','switche','switsh','swicth'],
+  'firewall':['firwall','firewale','firewal','firevall'],
+  'serveur':['servuer','serveuer','serveurs','serveru'],
+  'ordinateur':['ordinatuer','ordianteur'],
+  'imprimante':['imprimant','imprimamte'],
+};
+function iaCorrect(s){
+  let r=s;
+  for(const[correct,wrongs]of Object.entries(IA_TYPOS))
+    for(const w of wrongs) r=r.replace(new RegExp('\\b'+w+'\\b','g'),correct);
+  return r;
 }
 
 // ── Mots numériques ──
-const IA_NUMS={un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,vingt:20,plusieurs:3,quelques:2,nombreux:5};
+const IA_NUMS={
+  un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,
+  six:6,sept:7,huit:8,neuf:9,dix:10,
+  onze:11,douze:12,quinze:15,vingt:20,
+  plusieurs:3,quelques:2,nombreux:5,beaucoup:8,
+  premier:1,premiere:1,deuxieme:2,troisieme:3
+};
 
-function iaExtractNum(before){
-  const m=before.match(/(\d+|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|vingt|plusieurs|quelques|nombreux)\s*$/);
-  if(!m)return 1;
-  return Math.min(parseInt(m[1])||IA_NUMS[m[1]]||1, 20);
+// Cherche un nombre AVANT ou APRÈS une position dans le texte
+function iaFindNum(s,idx,termLen){
+  // Avant : "3 switch", "trois switchs"
+  const before=s.slice(Math.max(0,idx-35),idx).trim();
+  const mBefore=before.match(/(\d+|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|quinze|vingt|plusieurs|quelques|nombreux|beaucoup)\s*(?:x\s*)?$/i);
+  if(mBefore){
+    const v=mBefore[1];
+    return Math.min(parseInt(v)||IA_NUMS[iaNorm(v)]||1,20);
+  }
+  // Après : "switch x3", "switch (3)", "switch ×3"
+  const after=s.slice(idx+termLen,idx+termLen+15);
+  const mAfter=after.match(/^s?\s*(?:x|×|\*|×|\()?\s*(\d+)/i);
+  if(mAfter) return Math.min(parseInt(mAfter[1]),20);
+  return 1;
 }
 
-// ── Catalogue équipements ──
+// ── Catalogue équipements (étendu + ordonné par priorité) ──
 const IA_EQ=[
-  {typeId:'router',  typeName:'Routeur',       prefix:'rt',   icon:'router',
-   terms:['routeur','router','passerelle','gateway']},
-  {typeId:'switch',  typeName:'Switch',         prefix:'sw',   icon:'switch',
-   terms:['switch','switche','switchs','commutateur']},
-  {typeId:'firewall',typeName:'Firewall',       prefix:'fw',   icon:'firewall',
-   terms:['firewall','firewalls','pare feu','parefeu']},
-  {typeId:'wifi',    typeName:'Borne WiFi',     prefix:'ap',   icon:'wifi',
-   terms:['wifi','borne wifi','borne','access point','point d acces','ap ']},
-  {typeId:'cloud',   typeName:'Cloud/Internet', prefix:'cloud',icon:'cloud',
-   terms:['cloud','internet','wan','ligne','fibre','vpn','liaison']},
-  {typeId:'server',  typeName:'Serveur',        prefix:'srv',  icon:'server',
-   terms:['serveur','serveurs','server','servers','srv']},
-  {typeId:'nas',     typeName:'NAS',            prefix:'nas',  icon:'nas',
-   terms:['nas','stockage reseau','baie de stockage','san']},
-  {typeId:'ups',     typeName:'Onduleur UPS',   prefix:'ups',  icon:'ups',
-   terms:['ups','onduleur','alimentation secourue','ballon']},
-  {typeId:'pc',      typeName:'Poste PC',       prefix:'pc',   icon:'pc',
-   terms:['pc','ordinateur','poste','workstation','desktop','laptop','portable','utilisateur','user','employe','bureau']},
-  {typeId:'printer', typeName:'Imprimante',     prefix:'imp',  icon:'printer',
-   terms:['imprimante','imprimantes','printer','impression']},
-  {typeId:'phone',   typeName:'Téléphone IP',   prefix:'tel',  icon:'phone',
-   terms:['telephone','telephones','phone','voip','ip phone','tel']},
-  {typeId:'camera',  typeName:'Caméra IP',      prefix:'cam',  icon:'camera',
-   terms:['camera','cameras','webcam','surveillance','cctv']},
+  {typeId:'firewall', typeName:'Firewall',       prefix:'fw',    icon:'firewall',
+   terms:['firewall','firewalls','pare feu','parefeu','fw ','pfsense','fortinet','asa']},
+  {typeId:'router',   typeName:'Routeur',        prefix:'rt',    icon:'router',
+   terms:['routeur','router','passerelle','gateway','box','livebox','freebox','bbox']},
+  {typeId:'switch',   typeName:'Switch',         prefix:'sw',    icon:'switch',
+   terms:['switch','commutateur','hub','switchs','switches']},
+  {typeId:'wifi',     typeName:'Borne WiFi',     prefix:'ap',    icon:'wifi',
+   terms:['wifi','wi fi','borne wifi','borne wifi','access point','point d acces','ap','borne reseau','point acces','hotspot']},
+  {typeId:'cloud',    typeName:'Cloud/Internet', prefix:'net',   icon:'cloud',
+   terms:['cloud','internet','wan','fibre optique','fibre','vpn','liaison wan','xdsl','adsl','ligne internet','operateur']},
+  {typeId:'nas',      typeName:'NAS',            prefix:'nas',   icon:'nas',
+   terms:['nas','san','stockage reseau','baie stockage','baie de stockage','synology','qnap','stockage partage']},
+  {typeId:'server',   typeName:'Serveur',        prefix:'srv',   icon:'server',
+   terms:['serveur','server','srv','hyperviseur','esxi','proxmox','blade','rack serveur','serveur rack','serveur web','serveur fichier','serveur mail','serveur applicatif','serveur de fichier']},
+  {typeId:'ups',      typeName:'Onduleur UPS',   prefix:'ups',   icon:'ups',
+   terms:['ups','onduleur','apc','eaton','alimentation secourue','alimentation secours']},
+  {typeId:'phone',    typeName:'Téléphone IP',   prefix:'tel',   icon:'phone',
+   terms:['telephone ip','telephonie ip','ip phone','ipphone','voip','phone ip','poste telephone','telephone voip','central telephonique','ipbx','pbx']},
+  {typeId:'camera',   typeName:'Caméra IP',      prefix:'cam',   icon:'camera',
+   terms:['camera ip','camera','cameras','webcam','surveillance','cctv','nvr','dvr','camera surveillance']},
+  {typeId:'printer',  typeName:'Imprimante',     prefix:'imp',   icon:'printer',
+   terms:['imprimante','imprimantes','printer','copieur','multifonction','mfp','plotter']},
+  {typeId:'pc',       typeName:'Poste PC',       prefix:'pc',    icon:'pc',
+   terms:['pc','ordinateur','poste de travail','poste client','workstation','desktop','laptop','portable','utilisateur','employe','collaborateur','mac','imac','macbook','thin client']},
 ];
 
-// ── Scan équipements dans un segment ──
-function iaScanEq(segment){
-  const s=iaNorm(segment);
-  const found={};
+// Mots à ignorer pour l'extraction de nom de bâtiment
+const IA_STOP_WORDS=new Set(['avec','et','un','une','des','le','la','les','du','de','au','aux','plus','aussi','ainsi','dont','qui','que','ou','dans','sur','sous','pour','par','via','entre','plusieurs','chacun','chaque','identique','meme','contenant','comprenant','incluant','ayant']);
+
+// ── Noms de bâtiments ──
+const IA_BLD=[
+  // [terme normalisé, nom affiché, priorité]
+  ['salle serveur','Salle Serveur',2],['datacenter','Datacenter',2],['data center','Datacenter',2],
+  ['siege social','Siège Social',2],['siege','Siège',1],['batiment principal','Bâtiment Principal',2],
+  ['batiment secondaire','Bâtiment Secondaire',2],['batiment','Bâtiment',1],
+  ['agence distante','Agence Distante',2],['agence','Agence',1],
+  ['bureau principal','Bureau Principal',2],['bureau','Bureau',1],
+  ['laboratoire','Laboratoire',1],['labo','Labo',1],
+  ['immeuble','Immeuble',1],['etage','Étage',1],
+  ['atelier','Atelier',1],['usine','Usine',1],
+  ['entrepot','Entrepôt',1],['filiale','Filiale',1],
+  ['annexe','Annexe',1],['campus','Campus',1],
+  ['hotel','Hôtel',1],['clinique','Clinique',1],
+  ['hopital','Hôpital',1],['magasin','Magasin',1],
+  ['boutique','Boutique',1],['building','Building',1],
+  ['site principal','Site Principal',2],['site distant','Site Distant',2],['site','Site',1],
+].sort((a,b)=>b[0].length-a[0].length); // plus longs en premier pour match prioritaire
+
+// Détecte le type de bâtiment à partir d'un texte normalisé
+function iaBldType(s){
+  for(const[term,,]of IA_BLD){
+    if(s.includes(term)) return IA_BLD.find(b=>b[0]===term)?.[1]||'Bâtiment';
+  }
+  return null;
+}
+
+// ── Scan équipements dans un segment de texte ──
+function iaScanEq(rawSegment){
+  const s=iaNorm(iaCorrect(rawSegment));
+  const found={}; // typeId → max count
+
   for(const eq of IA_EQ){
     for(const term of eq.terms){
-      const idx=s.indexOf(term);
-      if(idx!==-1){
-        const before=s.slice(Math.max(0,idx-30),idx);
-        const count=iaExtractNum(before);
-        found[eq.typeId]=Math.max(found[eq.typeId]||0,count);
-        break;
+      // Recherche toutes les occurrences du terme
+      let idx=s.indexOf(term);
+      while(idx!==-1){
+        // Vérifier que ce n'est pas un sous-mot (ex: "firewall" dans "firewallx")
+        const after=s[idx+term.length];
+        if(!after||/[\s,;.+\d\(\)x]/.test(after)||idx+term.length===s.length){
+          const count=iaFindNum(s,idx,term.length);
+          found[eq.typeId]=Math.max(found[eq.typeId]||0,count);
+        }
+        idx=s.indexOf(term,idx+1);
       }
     }
   }
+
   const equipment=[];
-  for(const [typeId,count] of Object.entries(found)){
+  for(const[typeId,count]of Object.entries(found)){
     const eq=IA_EQ.find(e=>e.typeId===typeId);
     for(let i=1;i<=count;i++){
       const lbl=count>1?`${eq.prefix}-${String(i).padStart(2,'0')}`:`${eq.prefix}-01`;
@@ -1666,123 +1734,226 @@ function iaScanEq(segment){
   return equipment;
 }
 
-// ── Noms de bâtiments reconnus ──
-const IA_BLD=[
-  ['batiment','Bâtiment'],['building','Building'],['agence','Agence'],
-  ['siege','Siège'],['datacenter','Datacenter'],['data center','Datacenter'],
-  ['salle serveur','Salle Serveur'],['salle','Salle'],['laboratoire','Laboratoire'],
-  ['labo','Labo'],['immeuble','Immeuble'],['etage','Étage'],['atelier','Atelier'],
-  ['usine','Usine'],['entrepot','Entrepôt'],['filiale','Filiale'],['annexe','Annexe'],
-  ['campus','Campus'],['hotel','Hôtel'],['clinique','Clinique'],['hopital','Hôpital'],
-  ['magasin','Magasin'],['boutique','Boutique'],['bureau','Bureau'],
-];
-
-// ── Mots-clés "chaque" ──
-function iaExpandEach(text){
-  // "2 bâtiments avec chacun un routeur et un switch" → répliquer l'équipement
-  const eachMatch=text.match(/(\d+|deux|trois|quatre|cinq)\s+(batiment|agence|bureau|site|immeuble)[s]?\s+(?:avec\s+)?(?:chacun|chaque|identique[s]?)\s+(.*)/i);
-  if(!eachMatch)return null;
-  const count=parseInt(eachMatch[1])||IA_NUMS[iaNorm(eachMatch[1])]||2;
-  const bldType=IA_BLD.find(b=>iaNorm(eachMatch[2]).startsWith(b[0]))?.[1]||'Bâtiment';
-  const eqDesc=eachMatch[3];
-  const eq=iaScanEq(eqDesc);
-  if(!eq.length)return null;
-  const buildings=[];
-  for(let i=1;i<=Math.min(count,8);i++){
-    const bEq=eq.map(e=>({...e,label:e.label.replace('-01',`-${String(i).padStart(2,'0')}`)}));
-    buildings.push({name:`${bldType} ${i}`,equipment:bEq});
+// ── Nettoie un nom de bâtiment (retire mots-outils + équipements) ──
+function iaCleanBldName(raw){
+  if(!raw) return '';
+  const eqTerms=IA_EQ.flatMap(e=>e.terms);
+  // Découpe sur les mots-outils ou les virgules/points
+  let name=raw.trim().replace(/[,:;.]+$/,'');
+  // Retire si commence par un terme d'équipement
+  for(const t of eqTerms){
+    if(iaNorm(name).startsWith(t)) return '';
   }
-  return buildings;
+  // Retire les stop words du début
+  const words=name.split(/\s+/);
+  const clean=[];
+  for(const w of words){
+    if(IA_STOP_WORDS.has(iaNorm(w))) break;
+    clean.push(w);
+  }
+  name=clean.join(' ').trim();
+  // Capitalise
+  return name.replace(/\b\w/g,c=>c.toUpperCase());
 }
 
-// ── Moteur principal ──
-function iaParseLocal(text){
-  const t=iaNorm(text);
+// ── PASSE 1 : pattern "Nom : équipements" ou "Nom - équipements" ──
+function iaPassColon(text){
+  // Découpe sur ":" ou " - " en début de segment type "Label : ..."
+  // Exemples: "Siège : routeur, switch", "Agence distante : fw, 5 pc"
+  const parts=text.split(/\s*(?::|–|—)\s*/);
+  if(parts.length<2) return null;
 
-  // Cas spécial : "X bâtiments avec chacun..."
-  const expanded=iaExpandEach(t);
-  if(expanded&&expanded.length>0){
-    const total=expanded.reduce((s,b)=>s+b.equipment.length,0);
-    return{
-      siteName:iaDetectSiteName(text,t),
-      buildings:expanded,
-      message:`Schéma généré : <strong>${expanded.length} bâtiments identiques</strong> avec <strong>${total} équipements</strong> au total. 🎉`
-    };
-  }
+  const buildings=[];
+  // Chaque paire (label, contenu) constitue un bâtiment
+  // Peut être: "Nom1 : eq1, eq2. Nom2 : eq3" → split by "." after joining
+  // Ou: "Nom1 : eq1 Nom2 : eq2" → multi-colon
 
-  // Chercher séparateurs de bâtiments explicites
-  const bldRegex=new RegExp(`(${IA_BLD.map(b=>b[0]).join('|')})(?:\\s+([a-z0-9][a-z0-9\\s]{0,18}))?`,'gi');
-  const bldMatches=[...t.matchAll(bldRegex)];
+  // Reconstruit les paires
+  for(let i=0;i<parts.length-1;i++){
+    // La partie droite va jusqu'au prochain nom de bâtiment ou fin
+    const labelRaw=parts[i].split(/[.!\n]+/).pop()||''; // prend la dernière phrase du segment gauche
+    const contentRaw=parts[i+1].split(/[.!\n]+/)[0]||''; // prend la première phrase du segment droit
 
-  let buildings=[];
+    const eq=iaScanEq(contentRaw);
+    if(!eq.length) continue;
 
-  if(bldMatches.length>=2){
-    // Plusieurs bâtiments trouvés → découper le texte à chaque mention
-    for(let i=0;i<bldMatches.length;i++){
-      const m=bldMatches[i];
-      const start=m.index;
-      const end=i+1<bldMatches.length?bldMatches[i+1].index:t.length;
-      const segment=t.slice(start,end);
-      const bldType=IA_BLD.find(b=>m[1].toLowerCase().startsWith(b[0]))?.[1]||'Bâtiment';
-      const rawSuffix=(m[2]||'').trim();
-      // Éviter que le suffixe contienne des mots d'équipement
-      const eqWords=IA_EQ.flatMap(e=>e.terms);
-      const cleanSuffix=rawSuffix&&!eqWords.some(w=>rawSuffix.startsWith(w))?(' '+rawSuffix.replace(/\b\w/g,c=>c.toUpperCase())):` ${i+1}`;
-      const name=bldType+cleanSuffix;
-      const equipment=iaScanEq(segment);
-      if(equipment.length>0) buildings.push({name,equipment});
-      else buildings.push({name,equipment:iaScanEq(t)}); // fallback
+    // Détermine le nom du bâtiment
+    const normLabel=iaNorm(labelRaw);
+    let bldName=iaBldType(normLabel);
+    if(bldName){
+      // Cherche un suffixe (lettre, chiffre, nom propre après le type)
+      const bldTerm=IA_BLD.find(b=>normLabel.includes(b[0]))?.[0]||'';
+      const afterType=labelRaw.slice(labelRaw.toLowerCase().indexOf(bldTerm.replace('e','é')
+        .replace('a','à'))||labelRaw.toLowerCase().indexOf(bldTerm)+bldTerm.length).trim();
+      const suffix=iaCleanBldName(afterType);
+      if(suffix&&suffix.length>1) bldName+=' '+suffix;
+    } else {
+      // Le label lui-même est le nom (ex: "Siège Social", "Paris", "Agence Lyon")
+      bldName=iaCleanBldName(labelRaw)||'Bâtiment '+(buildings.length+1);
     }
-  } else if(bldMatches.length===1){
-    const m=bldMatches[0];
-    const bldType=IA_BLD.find(b=>m[1].toLowerCase().startsWith(b[0]))?.[1]||'Bâtiment';
-    const rawSuffix=(m[2]||'').trim();
-    const name=rawSuffix?`${bldType} ${rawSuffix.replace(/\b\w/g,c=>c.toUpperCase())}`:bldType+' Principal';
-    const equipment=iaScanEq(t);
-    if(equipment.length>0) buildings.push({name,equipment});
+
+    buildings.push({name:bldName,equipment:eq});
   }
 
-  // Séparateur "+" entre deux descriptions sans mot bâtiment
-  if(buildings.length===0){
-    const parts=text.split(/\s*\+\s*/);
-    if(parts.length>=2){
-      const names=['Bâtiment Principal','Bâtiment Secondaire','Bâtiment 3','Bâtiment 4'];
-      for(let i=0;i<parts.length;i++){
-        const eq=iaScanEq(parts[i]);
-        if(eq.length>0) buildings.push({name:names[i]||`Bâtiment ${i+1}`,equipment:eq});
+  return buildings.length>=1?buildings:null;
+}
+
+// ── PASSE 2 : "N bâtiments avec chacun…" ──
+function iaPassEach(t){
+  const m=t.match(/(\d+|deux|trois|quatre|cinq|six)\s+(batiment|agence|bureau|site|salle|immeuble)[s]?\s+(?:avec\s+)?(?:chacun|chaque|identique[s]?|similaire[s]?)\s+(.+)/);
+  if(!m) return null;
+  const count=Math.min(parseInt(m[1])||IA_NUMS[m[1]]||2,8);
+  const bldType=IA_BLD.find(b=>m[2].startsWith(b[0]))?.[1]||'Bâtiment';
+  const eq=iaScanEq(m[3]);
+  if(!eq.length) return null;
+  return Array.from({length:count},(_,i)=>({
+    name:`${bldType} ${i+1}`,
+    equipment:eq.map(e=>({...e,label:e.label.replace('-01','-'+String(i+1).padStart(2,'0'))}))
+  }));
+}
+
+// ── PASSE 3 : mots-clés bâtiments explicites ──
+function iaPassKeywords(t,originalText){
+  // Construit un pattern de détection par ordre de longueur décroissante
+  const bldTermsSorted=[...IA_BLD].sort((a,b)=>b[0].length-a[0].length);
+  const pattern=bldTermsSorted.map(b=>b[0].replace(/ /g,'\\s+')).join('|');
+  const bldRx=new RegExp(`(${pattern})(?:\\s+([a-z0-9][a-z0-9\\s]{0,22}))?`,'g');
+
+  const matches=[...t.matchAll(bldRx)];
+  if(matches.length<1) return null;
+
+  const buildings=[];
+  for(let i=0;i<matches.length;i++){
+    const m=matches[i];
+    const start=m.index;
+    const end=i+1<matches.length?matches[i+1].index:t.length;
+    const segment=t.slice(start,end);
+
+    const bldType=IA_BLD.find(b=>m[1].startsWith(b[0]))?.[1]||'Bâtiment';
+
+    // Extrait le suffixe de nom propre (après le mot-clé bâtiment)
+    const rawSuffix=(m[2]||'').trim();
+    const cleanSuffix=rawSuffix?iaCleanBldName(rawSuffix):'';
+    const name=cleanSuffix&&cleanSuffix.length>0
+      ?`${bldType} ${cleanSuffix}`
+      :(matches.length>1?`${bldType} ${i+1}`:bldType+' Principal');
+
+    const eq=iaScanEq(segment);
+    if(eq.length>0) buildings.push({name,equipment:eq});
+  }
+  return buildings.length>0?buildings:null;
+}
+
+// ── PASSE 4 : découpe par phrases (". " ou "\n") ──
+function iaPassSentences(text){
+  // Sépare sur ". ", "! ", "? ", retours à la ligne
+  const sentences=text.split(/(?:[.!?]\s+|\n+)/).filter(s=>s.trim().length>3);
+  if(sentences.length<2) return null;
+
+  const buildings=[];
+  const defaultNames=['Bâtiment Principal','Bâtiment Secondaire','Bâtiment 3','Bâtiment 4','Bâtiment 5'];
+
+  for(let i=0;i<sentences.length;i++){
+    const s=sentences[i];
+    const eq=iaScanEq(s);
+    if(!eq.length) continue;
+
+    // Cherche un nom de bâtiment dans la phrase
+    const nt=iaNorm(s);
+    let name=iaBldType(nt);
+    if(!name) name=defaultNames[buildings.length]||`Bâtiment ${buildings.length+1}`;
+    else {
+      const bt=IA_BLD.find(b=>nt.includes(b[0]));
+      if(bt){
+        const afterIdx=nt.indexOf(bt[0])+bt[0].length;
+        const suffix=iaCleanBldName(s.slice(afterIdx));
+        if(suffix&&suffix.length>1) name+=` ${suffix}`;
       }
     }
+    buildings.push({name,equipment:eq});
   }
-
-  // Séparateur "et" / virgule entre bâtiments implicites
-  if(buildings.length===0){
-    const eq=iaScanEq(t);
-    if(eq.length>0) buildings.push({name:'Bâtiment Principal',equipment:eq});
-  }
-
-  if(buildings.length===0||buildings.every(b=>b.equipment.length===0)) return null;
-
-  const total=buildings.reduce((s,b)=>s+b.equipment.length,0);
-  return{
-    siteName:iaDetectSiteName(text,t),
-    buildings,
-    message:`Schéma généré avec <strong>${buildings.length} bâtiment${buildings.length>1?'s':''}</strong> et <strong>${total} équipement${total>1?'s':''}</strong>. Cliquez sur <em>Appliquer</em> pour éditer ! ✅`
-  };
+  return buildings.length>=2?buildings:null;
 }
 
-function iaDetectSiteName(text,norm){
-  const siteMatch=norm.match(/(?:site|reseau|schema|projet|appele|nomme|pour)\s+([a-z0-9][a-z0-9\s]{1,20}?)(?:\s+avec|\s*[,.]|\s*$)/);
-  if(siteMatch) return siteMatch[1].trim().replace(/\b\w/g,c=>c.toUpperCase());
-  const firstWord=text.match(/^([A-ZÀÂÉÈÙÎ][a-zàâéèùîôäëïü]+(?:\s[A-ZÀÂÉÈÙÎ][a-zàâéèùîôäëïü]+)?)/);
-  if(firstWord){
-    const eqWords=IA_EQ.flatMap(e=>e.terms);
-    const bldWords=IA_BLD.map(b=>b[0]);
-    const fw=iaNorm(firstWord[1]);
-    if(!eqWords.some(w=>fw.includes(w))&&!bldWords.some(w=>fw.startsWith(w))){
-      return firstWord[1];
-    }
+// ── PASSE 5 : séparateur "+" ──
+function iaPassPlus(text){
+  const parts=text.split(/\s*\+\s*/);
+  if(parts.length<2) return null;
+  const buildings=[];
+  const defaultNames=['Bâtiment Principal','Bâtiment Secondaire','Bâtiment 3','Bâtiment 4'];
+  for(let i=0;i<parts.length;i++){
+    const eq=iaScanEq(parts[i]);
+    if(!eq.length) continue;
+    const nt=iaNorm(parts[i]);
+    let name=iaBldType(nt)||defaultNames[buildings.length]||`Bâtiment ${buildings.length+1}`;
+    buildings.push({name,equipment:eq});
+  }
+  return buildings.length>=2?buildings:null;
+}
+
+// ── PASSE 6 : bâtiment unique (fallback) ──
+function iaPassSingle(text){
+  const eq=iaScanEq(text);
+  if(!eq.length) return null;
+  const nt=iaNorm(text);
+  let name=iaBldType(nt)||'Bâtiment Principal';
+  return [{name,equipment:eq}];
+}
+
+// ── Détection du nom du site ──
+function iaDetectSiteName(text){
+  const t=iaNorm(text);
+  // "site X", "réseau X", "schéma X", "pour X", "appelé X", "nommé X"
+  const m=t.match(/(?:site|reseau|schema|projet|pour|appele|nomme|nom)\s+([a-z][a-z0-9\s]{1,25}?)(?:\s+avec|\s*[,:.]|\s*$)/);
+  if(m) return m[1].trim().replace(/\b\w/g,c=>c.toUpperCase());
+  // Cherche un nom propre majuscule en début de texte
+  const first=text.match(/^([A-ZÀÂÉÈÙÎ][a-zàâéèùîôäëïü]+(?:\s+[A-ZÀÂÉÈÙÎ][a-zàâéèùîôäëïü]+)?)/);
+  if(first){
+    const fw=iaNorm(first[1]);
+    const isEq=IA_EQ.flatMap(e=>e.terms).some(w=>fw.startsWith(w));
+    const isBld=IA_BLD.some(b=>fw.startsWith(b[0]));
+    if(!isEq&&!isBld) return first[1];
   }
   return 'Mon Réseau';
+}
+
+// ── Moteur principal — cascade de passes ──
+function iaParseLocal(text){
+  const t=iaNorm(iaCorrect(text));
+
+  let buildings=null;
+
+  // P1 : pattern "Nom : équipements" (le plus fiable)
+  if(!buildings) buildings=iaPassColon(text);
+
+  // P2 : "N bâtiments avec chacun…"
+  if(!buildings) buildings=iaPassEach(t);
+
+  // P3 : mots-clés bâtiments explicites
+  if(!buildings) buildings=iaPassKeywords(t,text);
+
+  // P4 : découpe par phrases
+  if(!buildings) buildings=iaPassSentences(text);
+
+  // P5 : séparateur "+"
+  if(!buildings) buildings=iaPassPlus(text);
+
+  // P6 : bâtiment unique (fallback)
+  if(!buildings) buildings=iaPassSingle(text);
+
+  if(!buildings||buildings.every(b=>!b.equipment.length)) return null;
+
+  // Nettoie les bâtiments vides
+  buildings=buildings.filter(b=>b.equipment.length>0);
+
+  const total=buildings.reduce((s,b)=>s+b.equipment.length,0);
+  const siteName=iaDetectSiteName(text);
+
+  return{
+    siteName,
+    buildings,
+    message:`Schéma généré : <strong>${buildings.length} bâtiment${buildings.length>1?'s':''}</strong>, <strong>${total} équipement${total>1?'s':''}</strong>. Cliquez sur <em>Appliquer</em> pour éditer ! ✅`
+  };
 }
 
 // ── Interface chat ──
