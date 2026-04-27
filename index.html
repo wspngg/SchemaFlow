@@ -1590,109 +1590,167 @@ window.addEventListener('resize',()=>{
 });
 
 // ════════════════════════════════════════════════════════════
-// IA LOCALE v2 — Moteur de génération de schéma réseau
-// 100% gratuit · Sans API · Multi-passes · Intelligent
+// IA LOCALE v3 — Moteur NLP réseau ultra-fluide
+// Langage naturel · Typos · Abréviations · Multi-passes
 // ════════════════════════════════════════════════════════════
 
-// ── Normalisation ──
+// ── Normalisation étendue ──
 function iaNorm(s){
   return (s||'').toLowerCase()
-    .replace(/[éèêë]/g,'e').replace(/[àâä]/g,'a')
-    .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
-    .replace(/[ùûü]/g,'u').replace(/ç/g,'c')
-    .replace(/['''`]/g,' ').replace(/[-–—]/g,' ');
+    .replace(/[éèêëẽ]/g,'e').replace(/[àâäã]/g,'a')
+    .replace(/[îïĩ]/g,'i').replace(/[ôöõ]/g,'o')
+    .replace(/[ùûüũ]/g,'u').replace(/[çć]/g,'c')
+    .replace(/[ñ]/g,'n')
+    .replace(/['''`´]/g,' ')
+    .replace(/[-–—_\/\\]/g,' ')
+    .replace(/\s+/g,' ').trim();
 }
 
-// ── Correction typos fréquentes ──
+// ── Correction typos + phonétique étendue ──
 const IA_TYPOS={
-  'routeur':['routuer','routeur','routuer','roueteur','rauteur'],
-  'switch':['swich','swith','switche','switsh','swicth'],
-  'firewall':['firwall','firewale','firewal','firevall'],
-  'serveur':['servuer','serveuer','serveurs','serveru'],
-  'ordinateur':['ordinatuer','ordianteur'],
-  'imprimante':['imprimant','imprimamte'],
+  'routeur':['routuer','roueteur','rauteur','rooter','routeure','routheur','routur','routear','routeurr','routeeur','roteur','rauteur','routters','routter'],
+  'switch':['swich','swith','switche','switsh','swicth','swtich','swithc','switich','swicch','swicht','svitch','zwich','swich','swicht','swicth','swit'],
+  'firewall':['firwall','firewale','firewal','firevall','firwall','firewll','firewwall','firawall','firewali','fiewall','fireall','firwall','friewall'],
+  'serveur':['servuer','serveuer','serveru','servuer','serveaur','srveur','servaur','serveur','serveuse','serveure','sreveur','servuer'],
+  'ordinateur':['ordinatuer','ordianteur','ordinateur','ordinatuer','ordintaeur','ordinatuer','ordi','ordinatuer'],
+  'imprimante':['imprimant','imprimamte','imprimnte','impriamnte','imprimamte','imprmante'],
+  'onduleur':['onduleur','onduleure','onduler'],
+  'camera':['camrea','caemra','camara','cammera','caméra'],
+  'telephone':['telephonne','telephoen','telepohne','telphone'],
+  'commutateur':['comutateur','commutater','commutatuer'],
+  'passerelle':['passrelle','passerele','passerelle'],
 };
+
+// Remplacement de formulations naturelles avant parsing
+const IA_REPHRASE=[
+  // "j'ai un/une" → direct
+  [/j[' ]?ai (?:un|une|des|le|la|les|mon|ma|mes)\s+/g,''],
+  [/j[' ]?ai besoin d[' ]?(?:un|une|des)\s+/g,''],
+  [/je (?:voudrais?|veux|souhaite|desire|aimerais?)\s+(?:un|une|des|mettre|avoir|ajouter)\s+/g,''],
+  [/(?:mets?[-\s]moi|ajoute(?:[-\s]moi)?|installe(?:[-\s]moi)?|place(?:[-\s]moi)?)\s+/g,''],
+  [/(?:il\s+)?(?:y\s+a|ya|ya\s+)\s+/g,''],
+  [/(?:genre|style|type|environ|approximativement|à\s+peu\s+près)\s+/g,''],
+  [/(?:ainsi\s+que|sans\s+oublier|n[' ]oublions\s+pas|également|aussi)\s+/g,' et '],
+  [/(?:comprenant|contenant|incluant|composé\s+de|composée\s+de|équipé\s+de)\s+/g,' avec '],
+  [/(?:relié\s+(?:à|au|aux)|connecté\s+(?:à|au|aux)|branché\s+(?:à|au|aux))\s+/g,' et '],
+  [/(?:d[' ]un\s+côté|d[' ]une\s+part|premièrement|en\s+premier)\s*/g,'Site A : '],
+  [/(?:de\s+l[' ]?autre\s+côté|d[' ]autre\s+part|deuxièmement|en\s+second|ensuite)\s*/g,'. Site B : '],
+  [/(?:une\s+dizaine\s+de)\s+/g,'10 '],
+  [/(?:une\s+quinzaine\s+de)\s+/g,'15 '],
+  [/(?:une\s+vingtaine\s+de)\s+/g,'20 '],
+  [/(?:une\s+trentaine\s+de)\s+/g,'30 '],
+  [/(?:une\s+poignée\s+de)\s+/g,'3 '],
+  [/(?:un\s+paquet\s+de)\s+/g,'5 '],
+  [/(?:beaucoup\s+de)\s+/g,'8 '],
+  [/(?:plein\s+de)\s+/g,'6 '],
+  [/(?:pas\s+mal\s+de)\s+/g,'4 '],
+  // connecteurs courants
+  [/\s*,\s*(?:et|puis|avec|ainsi que)\s+/g,', '],
+  [/\s+puis\s+/g,' et '],
+];
+
 function iaCorrect(s){
+  // 1. Remplacements de formulations naturelles
   let r=s;
-  for(const[correct,wrongs]of Object.entries(IA_TYPOS))
-    for(const w of wrongs) r=r.replace(new RegExp('\\b'+w+'\\b','g'),correct);
-  return r;
+  for(const[rx,rep] of IA_REPHRASE) r=r.replace(rx,rep);
+
+  // 2. Correction typos mot par mot
+  const words=r.split(/\b/);
+  const corrected=words.map(w=>{
+    const wl=w.toLowerCase();
+    for(const[correct,wrongs] of Object.entries(IA_TYPOS)){
+      if(wrongs.includes(wl)) return w.replace(wl,correct);
+    }
+    return w;
+  });
+  return corrected.join('');
 }
 
-// ── Mots numériques ──
+// ── Mots numériques (étendu + langage familier) ──
 const IA_NUMS={
-  un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,
+  // cardinaux
+  zero:0,un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,
   six:6,sept:7,huit:8,neuf:9,dix:10,
-  onze:11,douze:12,quinze:15,vingt:20,
-  plusieurs:3,quelques:2,nombreux:5,beaucoup:8,
-  premier:1,premiere:1,deuxieme:2,troisieme:3
+  onze:11,douze:12,treize:13,quatorze:14,quinze:15,
+  seize:16,dixsept:17,dixhuit:18,dixneuf:19,vingt:20,
+  // ordinaux
+  premier:1,premiere:1,deuxieme:2,troisieme:3,quatrieme:4,cinquieme:5,
+  // vague/familier
+  plusieurs:3,quelques:2,nombreux:5,beaucoup:8,plein:6,
+  'pas mal':4,paquet:5,poignee:3,
 };
 
 // Cherche un nombre AVANT ou APRÈS une position dans le texte
 function iaFindNum(s,idx,termLen){
-  // Avant : "3 switch", "trois switchs"
-  const before=s.slice(Math.max(0,idx-35),idx).trim();
-  const mBefore=before.match(/(\d+|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|quinze|vingt|plusieurs|quelques|nombreux|beaucoup)\s*(?:x\s*)?$/i);
+  // Avant : "3 switch", "trois switchs", "une dizaine de switchs"
+  const before=s.slice(Math.max(0,idx-45),idx).trim();
+  const mBefore=before.match(/(\d+|zero|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze|treize|quatorze|quinze|seize|dixsept|dixhuit|dixneuf|vingt|plusieurs|quelques|nombreux|beaucoup|plein)\s*(?:x\s*)?$/i);
   if(mBefore){
     const v=mBefore[1];
-    return Math.min(parseInt(v)||IA_NUMS[iaNorm(v)]||1,20);
+    const n=parseInt(v);
+    return Math.min(isNaN(n)?(IA_NUMS[iaNorm(v)]||1):n,30);
   }
-  // Après : "switch x3", "switch (3)", "switch ×3"
-  const after=s.slice(idx+termLen,idx+termLen+15);
+  // Après : "switch x3", "switch (3)", "switch ×3", "switchs x 4"
+  const after=s.slice(idx+termLen,idx+termLen+20);
   const mAfter=after.match(/^s?\s*(?:x|×|\*|×|\()?\s*(\d+)/i);
-  if(mAfter) return Math.min(parseInt(mAfter[1]),20);
+  if(mAfter) return Math.min(parseInt(mAfter[1]),30);
   return 1;
 }
 
-// ── Catalogue équipements (étendu + ordonné par priorité) ──
+// ── Catalogue équipements (ultra-étendu, langage naturel) ──
 const IA_EQ=[
   {typeId:'firewall', typeName:'Firewall',       prefix:'fw',    icon:'firewall',
-   terms:['firewall','firewalls','pare feu','parefeu','fw ','pfsense','fortinet','asa']},
+   terms:['firewall','firewalls','pare feu','parefeu','fw','pfsense','fortinet','asa','sophos','checkpoint','utm','fortigate','pfblocker','securite reseau','protection reseau','pare-feu']},
   {typeId:'router',   typeName:'Routeur',        prefix:'rt',    icon:'router',
-   terms:['routeur','router','passerelle','gateway','box','livebox','freebox','bbox']},
+   terms:['routeur','router','passerelle','gateway','box','livebox','freebox','bbox','sfr box','bbox miami','routeurs','modem','modem routeur','modem-routeur','cpe','adsl modem','routeur wifi','routeur internet','point de sortie','acces internet']},
   {typeId:'switch',   typeName:'Switch',         prefix:'sw',    icon:'switch',
-   terms:['switch','commutateur','hub','switchs','switches']},
+   terms:['switch','commutateur','hub','switchs','switches','switch core','switch acces','switch distribution','switch poe','switch administrable','switch manageable','switch l2','switch l3','switch reseau','sw']},
   {typeId:'wifi',     typeName:'Borne WiFi',     prefix:'ap',    icon:'wifi',
-   terms:['wifi','wi fi','borne wifi','borne wifi','access point','point d acces','ap','borne reseau','point acces','hotspot']},
+   terms:['wifi','wi fi','borne wifi','access point','point d acces','ap','borne reseau','point acces','hotspot','borne','point acces wifi','controleur wifi','ubiquiti','unifi','borne sans fil','reseau sans fil','wlan','borne wireless']},
   {typeId:'cloud',    typeName:'Cloud/Internet', prefix:'net',   icon:'cloud',
-   terms:['cloud','internet','wan','fibre optique','fibre','vpn','liaison wan','xdsl','adsl','ligne internet','operateur']},
+   terms:['cloud','internet','wan','fibre optique','fibre','vpn','liaison wan','xdsl','adsl','ligne internet','operateur','azure','aws','gcp','google cloud','o365','office 365','saas','iaas','paas','reseau wan','lien wan','acces wan','internet haut debit','reseau public']},
   {typeId:'nas',      typeName:'NAS',            prefix:'nas',   icon:'nas',
-   terms:['nas','san','stockage reseau','baie stockage','baie de stockage','synology','qnap','stockage partage']},
+   terms:['nas','san','stockage reseau','baie stockage','baie de stockage','synology','qnap','stockage partage','espace stockage','serveur nas','serveur de stockage','storage','stockage','netapp','dell emc','baie san']},
   {typeId:'server',   typeName:'Serveur',        prefix:'srv',   icon:'server',
-   terms:['serveur','server','srv','hyperviseur','esxi','proxmox','blade','rack serveur','serveur rack','serveur web','serveur fichier','serveur mail','serveur applicatif','serveur de fichier']},
+   terms:['serveur','server','srv','hyperviseur','esxi','proxmox','blade','rack serveur','serveur rack','serveur web','serveur fichier','serveur mail','serveur applicatif','serveur de fichier','serveur dns','serveur dhcp','serveur active directory','active directory','ad','windows server','linux server','machine virtuelle','vm','vmware','hyper-v','serveur base de donnees','serveur bdd','serveur backup','serveur de sauvegarde','baie de serveurs']},
   {typeId:'ups',      typeName:'Onduleur UPS',   prefix:'ups',   icon:'ups',
-   terms:['ups','onduleur','apc','eaton','alimentation secourue','alimentation secours']},
+   terms:['ups','onduleur','apc','eaton','alimentation secourue','alimentation secours','groupe electrogene','batterie secours','ats','onduleur reseau']},
   {typeId:'phone',    typeName:'Téléphone IP',   prefix:'tel',   icon:'phone',
-   terms:['telephone ip','telephonie ip','ip phone','ipphone','voip','phone ip','poste telephone','telephone voip','central telephonique','ipbx','pbx']},
+   terms:['telephone ip','telephonie ip','ip phone','ipphone','voip','phone ip','poste telephone','telephone voip','central telephonique','ipbx','pbx','asterisk','freepbx','3cx','cisco call manager','dect','telephone fixe','standard telephonique','pabx','centrex','telephonie','poste voip']},
   {typeId:'camera',   typeName:'Caméra IP',      prefix:'cam',   icon:'camera',
-   terms:['camera ip','camera','cameras','webcam','surveillance','cctv','nvr','dvr','camera surveillance']},
+   terms:['camera ip','camera','cameras','webcam','surveillance','cctv','nvr','dvr','camera surveillance','videosurveillance','systeme surveillance','ptz','dome','bullet camera','caméra','enregistreur video','vid']},
   {typeId:'printer',  typeName:'Imprimante',     prefix:'imp',   icon:'printer',
-   terms:['imprimante','imprimantes','printer','copieur','multifonction','mfp','plotter']},
+   terms:['imprimante','imprimantes','printer','copieur','multifonction','mfp','plotter','imprimante reseau','imprimante laser','impression']},
   {typeId:'pc',       typeName:'Poste PC',       prefix:'pc',    icon:'pc',
-   terms:['pc','ordinateur','poste de travail','poste client','workstation','desktop','laptop','portable','utilisateur','employe','collaborateur','mac','imac','macbook','thin client']},
+   terms:['pc','ordinateur','poste de travail','poste client','workstation','desktop','laptop','portable','utilisateur','employe','collaborateur','mac','imac','macbook','thin client','poste','station','bureau','user','poste informatique','ordinateur portable','pc portable','poste fixe','terminal','chromebook','surface','agent','operateur']},
 ];
 
 // Mots à ignorer pour l'extraction de nom de bâtiment
 const IA_STOP_WORDS=new Set(['avec','et','un','une','des','le','la','les','du','de','au','aux','plus','aussi','ainsi','dont','qui','que','ou','dans','sur','sous','pour','par','via','entre','plusieurs','chacun','chaque','identique','meme','contenant','comprenant','incluant','ayant']);
 
-// ── Noms de bâtiments ──
+// ── Noms de bâtiments (étendu + langage naturel) ──
 const IA_BLD=[
   // [terme normalisé, nom affiché, priorité]
-  ['salle serveur','Salle Serveur',2],['datacenter','Datacenter',2],['data center','Datacenter',2],
-  ['siege social','Siège Social',2],['siege','Siège',1],['batiment principal','Bâtiment Principal',2],
-  ['batiment secondaire','Bâtiment Secondaire',2],['batiment','Bâtiment',1],
-  ['agence distante','Agence Distante',2],['agence','Agence',1],
-  ['bureau principal','Bureau Principal',2],['bureau','Bureau',1],
+  ['salle serveur','Salle Serveur',2],['salle informatique','Salle Informatique',2],
+  ['datacenter','Datacenter',2],['data center','Datacenter',2],['centre de donnees','Datacenter',2],
+  ['siege social','Siège Social',2],['siege','Siège',1],
+  ['batiment principal','Bâtiment Principal',2],['batiment secondaire','Bâtiment Secondaire',2],
+  ['batiment','Bâtiment',1],['building','Building',1],['immeuble','Immeuble',1],
+  ['agence distante','Agence Distante',2],['agence principale','Agence Principale',2],['agence','Agence',1],
+  ['bureau principal','Bureau Principal',2],['bureau secondaire','Bureau Secondaire',2],['bureau','Bureau',1],
   ['laboratoire','Laboratoire',1],['labo','Labo',1],
-  ['immeuble','Immeuble',1],['etage','Étage',1],
-  ['atelier','Atelier',1],['usine','Usine',1],
-  ['entrepot','Entrepôt',1],['filiale','Filiale',1],
-  ['annexe','Annexe',1],['campus','Campus',1],
-  ['hotel','Hôtel',1],['clinique','Clinique',1],
-  ['hopital','Hôpital',1],['magasin','Magasin',1],
-  ['boutique','Boutique',1],['building','Building',1],
-  ['site principal','Site Principal',2],['site distant','Site Distant',2],['site','Site',1],
-].sort((a,b)=>b[0].length-a[0].length); // plus longs en premier pour match prioritaire
+  ['etage','Étage',1],['niveau','Niveau',1],['rez de chaussee','RdC',2],['rdc','RdC',1],
+  ['atelier','Atelier',1],['usine','Usine',1],['production','Production',1],
+  ['entrepot','Entrepôt',1],['depot','Dépôt',1],['logistique','Logistique',1],
+  ['filiale','Filiale',1],['succursale','Succursale',1],['annexe','Annexe',1],
+  ['campus','Campus',1],['hotel','Hôtel',1],['clinique','Clinique',1],
+  ['hopital','Hôpital',1],['magasin','Magasin',1],['boutique','Boutique',1],
+  ['site principal','Site Principal',2],['site distant','Site Distant',2],
+  ['site secondaire','Site Secondaire',2],['site','Site',1],
+  ['local technique','Local Technique',2],['local','Local',1],
+  ['zone','Zone',1],['espace','Espace',1],['salle','Salle',1],
+  ['infrastructure','Infrastructure',1],['reseau','Réseau',1],
+].sort((a,b)=>b[0].length-a[0].length);
 
 // Détecte le type de bâtiment à partir d'un texte normalisé
 function iaBldType(s){
@@ -1707,16 +1765,38 @@ function iaScanEq(rawSegment){
   const s=iaNorm(iaCorrect(rawSegment));
   const found={}; // typeId → max count
 
-  for(const eq of IA_EQ){
+  // Trie les équipements par longueur de terme décroissante pour éviter les sous-match
+  const eqSorted=[...IA_EQ].sort((a,b)=>{
+    const ma=Math.max(...a.terms.map(t=>t.length));
+    const mb=Math.max(...b.terms.map(t=>t.length));
+    return mb-ma;
+  });
+
+  const matched=new Set(); // positions déjà matchées pour éviter double-compte
+
+  for(const eq of eqSorted){
     for(const term of eq.terms){
-      // Recherche toutes les occurrences du terme
       let idx=s.indexOf(term);
       while(idx!==-1){
-        // Vérifier que ce n'est pas un sous-mot (ex: "firewall" dans "firewallx")
-        const after=s[idx+term.length];
-        if(!after||/[\s,;.+\d\(\)x]/.test(after)||idx+term.length===s.length){
-          const count=iaFindNum(s,idx,term.length);
-          found[eq.typeId]=Math.max(found[eq.typeId]||0,count);
+        // Vérifier frontière de mot : caractère avant
+        const before=s[idx-1];
+        const validBefore=!before||/[\s,;.+\d\(\)x:!\?\/]/.test(before)||idx===0;
+        // Vérifier frontière de mot : caractère après (gère pluriels -s, -x)
+        const afterChar=s[idx+term.length];
+        const validAfter=!afterChar||/[\s,;.+\d\(\)x:!\?\/]/.test(afterChar)||afterChar==='s'||afterChar==='x'||idx+term.length===s.length;
+
+        if(validBefore&&validAfter){
+          // Vérifie que cette zone n'est pas déjà couverte par un terme plus long
+          const posKey=`${idx}-${idx+term.length}`;
+          const alreadyCovered=[...matched].some(mk=>{
+            const[ms,me]=mk.split('-').map(Number);
+            return idx>=ms&&idx+term.length<=me;
+          });
+          if(!alreadyCovered){
+            matched.add(posKey);
+            const count=iaFindNum(s,idx,term.length);
+            found[eq.typeId]=Math.max(found[eq.typeId]||0,count);
+          }
         }
         idx=s.indexOf(term,idx+1);
       }
@@ -1724,7 +1804,13 @@ function iaScanEq(rawSegment){
   }
 
   const equipment=[];
-  for(const[typeId,count]of Object.entries(found)){
+  // Ordre d'affichage logique : fw, router, switch, wifi, server, nas, ups, pc, printer, phone, camera, cloud
+  const ORDER=['firewall','router','switch','wifi','server','nas','ups','pc','printer','phone','camera','cloud'];
+  const sortedFound=Object.entries(found).sort((a,b)=>{
+    const ia=ORDER.indexOf(a[0]);const ib=ORDER.indexOf(b[0]);
+    return (ia<0?99:ia)-(ib<0?99:ib);
+  });
+  for(const[typeId,count]of sortedFound){
     const eq=IA_EQ.find(e=>e.typeId===typeId);
     for(let i=1;i<=count;i++){
       const lbl=count>1?`${eq.prefix}-${String(i).padStart(2,'0')}`:`${eq.prefix}-01`;
@@ -1817,7 +1903,7 @@ function iaPassKeywords(t,originalText){
   // Construit un pattern de détection par ordre de longueur décroissante
   const bldTermsSorted=[...IA_BLD].sort((a,b)=>b[0].length-a[0].length);
   const pattern=bldTermsSorted.map(b=>b[0].replace(/ /g,'\\s+')).join('|');
-  const bldRx=new RegExp(`(${pattern})(?:\\s+([a-z0-9][a-z0-9\\s]{0,22}))?`,'g');
+  const bldRx=new RegExp(`(${pattern})(?:\\s+([a-z0-9àâéèùîôç][a-z0-9àâéèùîôç\\s]{0,28}))?`,'g');
 
   const matches=[...t.matchAll(bldRx)];
   if(matches.length<1) return null;
@@ -1891,6 +1977,23 @@ function iaPassPlus(text){
   return buildings.length>=2?buildings:null;
 }
 
+// ── PASSE 5b : séparateurs / | ; ──
+function iaPassSlash(text){
+  // Découpe sur "/" ou "|" ou ";" si on ne trouve pas de bâtiments
+  const parts=text.split(/\s*[\/\|;]\s*/);
+  if(parts.length<2) return null;
+  const buildings=[];
+  const defaultNames=['Site A','Site B','Site C','Site D'];
+  for(let i=0;i<parts.length;i++){
+    const eq=iaScanEq(parts[i]);
+    if(!eq.length) continue;
+    const nt=iaNorm(parts[i]);
+    let name=iaBldType(nt)||defaultNames[buildings.length]||`Site ${buildings.length+1}`;
+    buildings.push({name,equipment:eq});
+  }
+  return buildings.length>=2?buildings:null;
+}
+
 // ── PASSE 6 : bâtiment unique (fallback) ──
 function iaPassSingle(text){
   const eq=iaScanEq(text);
@@ -1919,27 +2022,32 @@ function iaDetectSiteName(text){
 
 // ── Moteur principal — cascade de passes ──
 function iaParseLocal(text){
-  const t=iaNorm(iaCorrect(text));
+  // Pré-traitement : correction + reformulation naturelle
+  const corrected=iaCorrect(text);
+  const t=iaNorm(corrected);
 
   let buildings=null;
 
   // P1 : pattern "Nom : équipements" (le plus fiable)
-  if(!buildings) buildings=iaPassColon(text);
+  if(!buildings) buildings=iaPassColon(corrected);
 
   // P2 : "N bâtiments avec chacun…"
   if(!buildings) buildings=iaPassEach(t);
 
   // P3 : mots-clés bâtiments explicites
-  if(!buildings) buildings=iaPassKeywords(t,text);
+  if(!buildings) buildings=iaPassKeywords(t,corrected);
 
   // P4 : découpe par phrases
-  if(!buildings) buildings=iaPassSentences(text);
+  if(!buildings) buildings=iaPassSentences(corrected);
 
   // P5 : séparateur "+"
-  if(!buildings) buildings=iaPassPlus(text);
+  if(!buildings) buildings=iaPassPlus(corrected);
+
+  // P5b : séparateur "/" | ";" 
+  if(!buildings) buildings=iaPassSlash(corrected);
 
   // P6 : bâtiment unique (fallback)
-  if(!buildings) buildings=iaPassSingle(text);
+  if(!buildings) buildings=iaPassSingle(corrected);
 
   if(!buildings||buildings.every(b=>!b.equipment.length)) return null;
 
@@ -1967,12 +2075,15 @@ function gotoIA(){
 
 function iaWelcome(){
   iaAddMsg('ai',`Bonjour ! Je suis l'assistant <strong>SchémaFlow</strong>. ✦<br><br>
-    Décrivez votre réseau simplement et je génère le schéma automatiquement.<br><br>
-    <strong>Exemples :</strong><br>
+    Décrivez votre réseau en langage naturel et je génère le schéma automatiquement.<br><br>
+    <strong>Exemples de phrases :</strong><br>
     • <em>"Un routeur, un switch et 3 PC"</em><br>
     • <em>"Bâtiment A avec firewall + switch. Bâtiment B avec serveur et NAS"</em><br>
-    • <em>"Siège : routeur, firewall, 2 switchs, 10 PC. Agence : routeur, switch, 5 PC"</em><br><br>
-    Équipements reconnus : routeur, switch, firewall, WiFi, cloud, serveur, NAS, UPS, PC, imprimante, téléphone, caméra 📡`);
+    • <em>"Siège : routeur, firewall, 2 switchs, 10 PC. Agence : routeur, switch, 5 PC"</em><br>
+    • <em>"J'ai besoin d'un routeur, deux switchs et une dizaine de postes"</em><br>
+    • <em>"Site principal / Agence distante avec chacun un firewall et des PC"</em><br><br>
+    <strong>Équipements reconnus :</strong> routeur, switch, firewall, WiFi, cloud, serveur, NAS, UPS, PC, imprimante, téléphone IP, caméra 📡<br><br>
+    <em>Je comprends les abréviations, les fautes de frappe et le langage familier 😉</em>`);
 }
 
 function iaSuggest(el){
@@ -2036,9 +2147,21 @@ function iaSend(){
         document.getElementById('iaMsgs').scrollTop=document.getElementById('iaMsgs').scrollHeight;
       }
     } else {
-      iaAddMsg('ai',`Je n'ai pas reconnu d'équipements réseau dans votre message. 🤔<br><br>
-        Essayez des mots comme : <strong>routeur, switch, firewall, serveur, PC, NAS, WiFi</strong>…<br>
-        Exemple : <em>"Un routeur et 2 switchs dans le bâtiment principal"</em>`);
+      // Analyse partielle : essaie de donner un indice utile
+      const t=iaNorm(iaCorrect(msg));
+      const hasEq=IA_EQ.flatMap(e=>e.terms).some(term=>t.includes(term));
+      const hasBld=IA_BLD.some(b=>t.includes(b[0]));
+      let hint='';
+      if(hasEq&&!hasBld){
+        hint=`J'ai détecté des équipements mais pas assez de contexte pour structurer le schéma. Essayez de préciser un bâtiment ou séparateur.<br><br>
+          Exemple : <em>"Bâtiment principal : routeur, switch, 5 PC"</em>`;
+      } else {
+        hint=`Je n'ai pas reconnu d'équipements réseau dans votre message. 🤔<br><br>
+          Essayez des mots comme : <strong>routeur, switch, firewall, serveur, PC, NAS, WiFi, imprimante</strong>…<br>
+          Exemple : <em>"Un routeur et 2 switchs dans le bâtiment principal"</em><br><br>
+          <em>Astuce : je comprends aussi "box", "ordi", "poste", "agent", "borne", "cam", etc.</em>`;
+      }
+      iaAddMsg('ai',hint);
     }
     document.getElementById('iaSendBtn').disabled=false;
   },600);
