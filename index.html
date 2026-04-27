@@ -1693,28 +1693,33 @@ function iaCorrect(s){
 function iaPreProcess(text){
   let t=text;
 
-  // ── Pattern 1 : "X qui s'appelle NOM … Y qui s'appelle NOM2" ──
-  // Extrait les noms propres définis par "qui s'appelle / nommé / appelé"
-  // et les injecte comme marqueurs de bâtiments
-  t=t.replace(/(?:un\s+)?(?:premier\s+)?(?:batiment|site|agence|bureau|usine|local|salle)\s+(?:qui\s+s[''`' ]?appelle?|nommé|appelé|intitulé)\s*:?\s*"?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9'\s]{0,25}?)"?(?=\s*[,.\n]|$|\s+[A-Z]|\s+un|\s+et|\s+avec)/gi,
-    (m,name)=>`Bâtiment ${name.trim()}`);
-  t=t.replace(/(?:un\s+)?(?:deuxième|second|2ème?|2e)\s+(?:batiment|site|agence|bureau|usine|local|salle)\s+(?:qui\s+s[''`' ]?appelle?|nommé|appelé|intitulé)\s*:?\s*"?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9'\s]{0,25}?)"?(?=\s*[,.\n]|$|\s+[A-Z]|\s+un|\s+et|\s+avec)/gi,
-    (m,name)=>`Bâtiment ${name.trim()}`);
+  // ── PRIORITE 0 : noms entre guillemets apres "batiment :" ou "batiment 'NOM'" ──
+  // Ex: 'batiment : "Agence" avec dedans' -> 'Batiment Agence avec'
+  t=t.replace(/(?:batiment|site|agence|bureau|usine|local|salle|immeuble)\s*:?\s*[\u00ab\u201c\u201e\u201d\u2018\u2019"']([A-Za-z\u00C0-\u00FF][A-Za-z\u00C0-\u00FF0-9\s]{0,25}?)[\u00bb\u201d\u2019"']/gi,
+    function(m,name){return 'Batiment '+name.trim();});
 
-  // ── Pattern 2 : "pareil dans X" / "idem dans X" / "même chose dans X" / "identique dans X" ──
-  // Remplace par un marqueur de duplication qu'on traitera après
-  t=t.replace(/(?:pareil|idem|identique|la\s+même\s+chose|même\s+configuration|même\s+chose)\s+(?:dans|pour|en|au|à)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9\s]{0,25})/gi,
-    (m,name)=>`__COPY__${name.trim()}`);
-  t=t.replace(/(?:pareil|idem|identique)\s+(?:dans|pour|en|au|à)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9\s]{0,25})/gi,
-    (m,name)=>`__COPY__${name.trim()}`);
+  // ── PRIORITE 0b : mots parasites courants ──
+  t=t.replace(/\bav?ec\s+d[ee]dans\b/gi,' avec ');
+  t=t.replace(/\bqu[i']\s+contient\b/gi,' avec ');
+  t=t.replace(/\bEnsuite\s+un\s+autre\b/gi,'. Un autre');
 
-  // ── Pattern 3 : "Dans X il y a …" → "X : …" ──
-  t=t.replace(/[Dd]ans\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9\s]{0,25?})\s+(?:il\s+y\s+a|ya|il\s+faut|on\s+a|se\s+trouve)\s*/g,
-    (m,name)=>`${name.trim()} : `);
+  // ── Pattern 1 : "premier batiment qui s appelle NOM" ──
+  t=t.replace(/(?:un\s+)?(?:premier|1er)\s+(?:batiment|site|agence|bureau|usine|local)\s+(?:qui\s+s.?appelle?|nomme|appele|intitule)\s*:?\s*[\u201c"']?([A-Za-z\u00C0-\u00FF][A-Za-z\u00C0-\u00FF0-9'\s]{0,25}?)[\u201d"']?(?=\s*[,.\n]|$|\s+[A-Z]|\s+un|\s+et|\s+avec|\s+Ensuite)/gi,
+    function(m,name){return 'Batiment '+name.trim();});
+  t=t.replace(/(?:un\s+)?(?:deuxieme|second|2eme?|2e)\s+(?:batiment|site|agence|bureau|usine|local)\s+(?:qui\s+s.?appelle?|nomme|appele|intitule)\s*:?\s*[\u201c"']?([A-Za-z\u00C0-\u00FF][A-Za-z\u00C0-\u00FF0-9'\s]{0,25}?)[\u201d"']?(?=\s*[,.\n]|$|\s+[A-Z]|\s+un|\s+et|\s+avec|\s+Ensuite)/gi,
+    function(m,name){return 'Batiment '+name.trim();});
 
-  // ── Pattern 4 : "Pour X, on met …" / "Pour X : …" ──
-  t=t.replace(/[Pp]our\s+(?:le|la|les|l[''`]?)?\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9\s]{0,25?})\s*[,:]\s*/g,
-    (m,name)=>`${name.trim()} : `);
+  // ── Pattern 2 : "pareil dans X" / "idem dans X" ──
+  t=t.replace(/(?:pareil|idem|identique|meme\s+chose|meme\s+config)\s+(?:dans|pour|en|au|a)\s+[\u201c"']?([A-Za-z\u00C0-\u00FF][A-Za-z\u00C0-\u00FF0-9\s]{0,25})[\u201d"']?/gi,
+    function(m,name){return '__COPY__'+name.trim();});
+
+  // ── Pattern 3 : "Dans X il y a" -> "X : " ──
+  t=t.replace(/[Dd]ans\s+[\u201c"']?([A-Za-z\u00C0-\u00FF][A-Za-z\u00C0-\u00FF0-9\s]{0,20?})[\u201d"']?\s+(?:il\s+y\s+a|ya|il\s+faut|on\s+a)\s*/g,
+    function(m,name){return name.trim()+' : ';});
+
+  // ── Pattern 4 : "Pour X," -> "X : " ──
+  t=t.replace(/[Pp]our\s+(?:le|la|les|l.)?\s*[\u201c"']?([A-Za-z\u00C0-\u00FF][A-Za-z\u00C0-\u00FF0-9\s]{0,20?})[\u201d"']?\s*[,:]\s*/g,
+    function(m,name){return name.trim()+' : ';});
 
   return t;
 }
@@ -1995,10 +2000,9 @@ function iaPassEach(t){
 
 // ── PASSE 3 : mots-clés bâtiments explicites ──
 function iaPassKeywords(t,originalText){
-  // Construit un pattern de détection par ordre de longueur décroissante
   const bldTermsSorted=[...IA_BLD].sort((a,b)=>b[0].length-a[0].length);
   const pattern=bldTermsSorted.map(b=>b[0].replace(/ /g,'\\s+')).join('|');
-  const bldRx=new RegExp(`(${pattern})(?:\\s+([a-z0-9àâéèùîôç][a-z0-9àâéèùîôç\\s]{0,28}))?`,'g');
+  const bldRx=new RegExp(`(${pattern})(?:\\s+([a-z0-9\u00e0-\u00ff][a-z0-9\u00e0-\u00ff\\s]{0,28}))?`,'g');
 
   const matches=[...t.matchAll(bldRx)];
   if(matches.length<1) return null;
@@ -2010,14 +2014,23 @@ function iaPassKeywords(t,originalText){
     const end=i+1<matches.length?matches[i+1].index:t.length;
     const segment=t.slice(start,end);
 
-    const bldType=IA_BLD.find(b=>m[1].startsWith(b[0]))?.[1]||'Bâtiment';
+    const bldType=IA_BLD.find(b=>m[1].startsWith(b[0]))?.[1]||'Batiment';
 
-    // Extrait le suffixe de nom propre (après le mot-clé bâtiment)
-    const rawSuffix=(m[2]||'').trim();
-    const cleanSuffix=rawSuffix?iaCleanBldName(rawSuffix):'';
-    const name=cleanSuffix&&cleanSuffix.length>0
-      ?`${bldType} ${cleanSuffix}`
-      :(matches.length>1?`${bldType} ${i+1}`:bldType+' Principal');
+    // Cherche d'abord un nom entre guillemets dans le segment original correspondant
+    const origSegment=originalText.slice(start,end);
+    const quotedMatch=origSegment.match(/[\u201c"'«]([A-Za-z\u00C0-\u00FF][A-Za-z\u00C0-\u00FF0-9\s]{1,25}?)[\u201d"'»]/);
+
+    let name;
+    if(quotedMatch){
+      // Nom entre guillemets → priorité absolue
+      name=quotedMatch[1].trim().replace(/\b\w/g,c=>c.toUpperCase());
+    } else {
+      const rawSuffix=(m[2]||'').trim();
+      const cleanSuffix=rawSuffix?iaCleanBldName(rawSuffix):'';
+      name=cleanSuffix&&cleanSuffix.length>0
+        ?`${bldType} ${cleanSuffix}`
+        :(matches.length>1?`${bldType} ${i+1}`:bldType+' Principal');
+    }
 
     const eq=iaScanEq(segment);
     if(eq.length>0) buildings.push({name,equipment:eq});
