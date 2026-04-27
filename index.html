@@ -1623,36 +1623,59 @@ const IA_TYPOS={
 
 // Remplacement de formulations naturelles avant parsing
 const IA_REPHRASE=[
-  // "j'ai un/une" → direct
-  [/j[' ]?ai (?:un|une|des|le|la|les|mon|ma|mes)\s+/g,''],
-  [/j[' ]?ai besoin d[' ]?(?:un|une|des)\s+/g,''],
-  [/je (?:voudrais?|veux|souhaite|desire|aimerais?)\s+(?:un|une|des|mettre|avoir|ajouter)\s+/g,''],
-  [/(?:mets?[-\s]moi|ajoute(?:[-\s]moi)?|installe(?:[-\s]moi)?|place(?:[-\s]moi)?)\s+/g,''],
-  [/(?:il\s+)?(?:y\s+a|ya|ya\s+)\s+/g,''],
-  [/(?:genre|style|type|environ|approximativement|à\s+peu\s+près)\s+/g,''],
-  [/(?:ainsi\s+que|sans\s+oublier|n[' ]oublions\s+pas|également|aussi)\s+/g,' et '],
-  [/(?:comprenant|contenant|incluant|composé\s+de|composée\s+de|équipé\s+de)\s+/g,' avec '],
-  [/(?:relié\s+(?:à|au|aux)|connecté\s+(?:à|au|aux)|branché\s+(?:à|au|aux))\s+/g,' et '],
-  [/(?:d[' ]un\s+côté|d[' ]une\s+part|premièrement|en\s+premier)\s*/g,'Site A : '],
-  [/(?:de\s+l[' ]?autre\s+côté|d[' ]autre\s+part|deuxièmement|en\s+second|ensuite)\s*/g,'. Site B : '],
-  [/(?:une\s+dizaine\s+de)\s+/g,'10 '],
-  [/(?:une\s+quinzaine\s+de)\s+/g,'15 '],
-  [/(?:une\s+vingtaine\s+de)\s+/g,'20 '],
-  [/(?:une\s+trentaine\s+de)\s+/g,'30 '],
-  [/(?:une\s+poignée\s+de)\s+/g,'3 '],
-  [/(?:un\s+paquet\s+de)\s+/g,'5 '],
-  [/(?:beaucoup\s+de)\s+/g,'8 '],
-  [/(?:plein\s+de)\s+/g,'6 '],
-  [/(?:pas\s+mal\s+de)\s+/g,'4 '],
+  // ── Patterns de nommage de bâtiments : "qui s'appelle X" / "nommé X" / "appelé X" ──
+  // Transforme "bâtiment qui s'appelle Siège" → "bâtiment Siège"
+  [/(?:batiment|agence|bureau|site|salle|usine|immeuble|local)\s+(?:qui\s+s[''`]?appelle|nomme|appele|appele|intitule|appele|surnomme)\s*:?\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9\s]{0,25}?)(?=\s*[,.\n]|$)/gi,
+    (m,name)=>m.replace(/(?:qui\s+s[''`]?appelle|nomme|appele|intitule|surnomme)\s*:?\s*/i,'').trim()],
+
+  // ── "pareil dans X" / "idem dans X" / "même chose dans X" → copie les équipements ──
+  // Ces patterns sont gérés dans iaPreProcess, pas ici
+
+  // ── Ordinaux → marqueurs de bâtiments séquentiels ──
+  [/\b(?:premier|1er|1ère?)\s+(?:batiment|site|agence|bureau)\b/gi,'Site 1'],
+  [/\b(?:deuxieme|2eme?|second)\s+(?:batiment|site|agence|bureau)\b/gi,'Site 2'],
+  [/\b(?:troisieme|3eme?)\s+(?:batiment|site|agence|bureau)\b/gi,'Site 3'],
+  [/\b(?:quatrieme|4eme?)\s+(?:batiment|site|agence|bureau)\b/gi,'Site 4'],
+
+  // ── Structures "premier bâtiment qui s'appelle X" ──
+  [/\b(?:premier|1er|1ere?)\s+(?:batiment|site|agence|bureau)\s+(?:qui\s+s[''`]?appelle|nomme|appele|intitule)\s*:?\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9\s]{0,25})/gi,
+    (m,p1)=>`Bâtiment ${p1.trim()}`],
+  [/\b(?:deuxieme|2eme?|second)\s+(?:batiment|site|agence|bureau)\s+(?:qui\s+s[''`]?appelle|nomme|appele|intitule)\s*:?\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9\s]{0,25})/gi,
+    (m,p1)=>`Bâtiment ${p1.trim()}`],
+
+  // ── "j'ai un/une" → direct ──
+  [/j[' ]?ai (?:un|une|des|le|la|les|mon|ma|mes)\s+/gi,''],
+  [/j[' ]?ai besoin d[' ]?(?:un|une|des)\s+/gi,''],
+  [/je (?:voudrais?|veux|souhaite|desire|aimerais?)\s+(?:un|une|des|mettre|avoir|ajouter)\s+/gi,''],
+  [/(?:mets?[-\s]moi|ajoute(?:[-\s]moi)?|installe(?:[-\s]moi)?|place(?:[-\s]moi)?)\s+/gi,''],
+  [/(?:il\s+)?(?:y\s+a|ya|ya\s+)\s+/gi,''],
+  [/(?:genre|style|type|environ|approximativement|à\s+peu\s+près)\s+/gi,''],
+  [/(?:ainsi\s+que|sans\s+oublier|n[' ]oublions\s+pas|également|aussi)\s+/gi,' et '],
+  [/(?:comprenant|contenant|incluant|composé\s+de|composée\s+de|équipé\s+de)\s+/gi,' avec '],
+  [/(?:relié\s+(?:à|au|aux)|connecté\s+(?:à|au|aux)|branché\s+(?:à|au|aux))\s+/gi,' et '],
+  [/(?:d[' ]un\s+côté|d[' ]une\s+part|premièrement|en\s+premier)\s*/gi,'Site A : '],
+  [/(?:de\s+l[' ]?autre\s+côté|d[' ]autre\s+part|deuxièmement|en\s+second|ensuite)\s*/gi,'. Site B : '],
+  [/(?:une\s+dizaine\s+de)\s+/gi,'10 '],
+  [/(?:une\s+quinzaine\s+de)\s+/gi,'15 '],
+  [/(?:une\s+vingtaine\s+de)\s+/gi,'20 '],
+  [/(?:une\s+trentaine\s+de)\s+/gi,'30 '],
+  [/(?:une\s+poignée\s+de)\s+/gi,'3 '],
+  [/(?:un\s+paquet\s+de)\s+/gi,'5 '],
+  [/(?:beaucoup\s+de)\s+/gi,'8 '],
+  [/(?:plein\s+de)\s+/gi,'6 '],
+  [/(?:pas\s+mal\s+de)\s+/gi,'4 '],
   // connecteurs courants
   [/\s*,\s*(?:et|puis|avec|ainsi que)\s+/g,', '],
   [/\s+puis\s+/g,' et '],
 ];
 
 function iaCorrect(s){
-  // 1. Remplacements de formulations naturelles
+  // 1. Remplacements de formulations naturelles (avec fonctions de remplacement)
   let r=s;
-  for(const[rx,rep] of IA_REPHRASE) r=r.replace(rx,rep);
+  for(const[rx,rep] of IA_REPHRASE){
+    if(typeof rep==='function') r=r.replace(rx,rep);
+    else r=r.replace(rx,rep);
+  }
 
   // 2. Correction typos mot par mot
   const words=r.split(/\b/);
@@ -1664,6 +1687,60 @@ function iaCorrect(s){
     return w;
   });
   return corrected.join('');
+}
+
+// ── Pré-traitement avancé : patterns conversationnels complexes ──
+function iaPreProcess(text){
+  let t=text;
+
+  // ── Pattern 1 : "X qui s'appelle NOM … Y qui s'appelle NOM2" ──
+  // Extrait les noms propres définis par "qui s'appelle / nommé / appelé"
+  // et les injecte comme marqueurs de bâtiments
+  t=t.replace(/(?:un\s+)?(?:premier\s+)?(?:batiment|site|agence|bureau|usine|local|salle)\s+(?:qui\s+s[''`' ]?appelle?|nommé|appelé|intitulé)\s*:?\s*"?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9'\s]{0,25}?)"?(?=\s*[,.\n]|$|\s+[A-Z]|\s+un|\s+et|\s+avec)/gi,
+    (m,name)=>`Bâtiment ${name.trim()}`);
+  t=t.replace(/(?:un\s+)?(?:deuxième|second|2ème?|2e)\s+(?:batiment|site|agence|bureau|usine|local|salle)\s+(?:qui\s+s[''`' ]?appelle?|nommé|appelé|intitulé)\s*:?\s*"?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9'\s]{0,25}?)"?(?=\s*[,.\n]|$|\s+[A-Z]|\s+un|\s+et|\s+avec)/gi,
+    (m,name)=>`Bâtiment ${name.trim()}`);
+
+  // ── Pattern 2 : "pareil dans X" / "idem dans X" / "même chose dans X" / "identique dans X" ──
+  // Remplace par un marqueur de duplication qu'on traitera après
+  t=t.replace(/(?:pareil|idem|identique|la\s+même\s+chose|même\s+configuration|même\s+chose)\s+(?:dans|pour|en|au|à)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9\s]{0,25})/gi,
+    (m,name)=>`__COPY__${name.trim()}`);
+  t=t.replace(/(?:pareil|idem|identique)\s+(?:dans|pour|en|au|à)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9\s]{0,25})/gi,
+    (m,name)=>`__COPY__${name.trim()}`);
+
+  // ── Pattern 3 : "Dans X il y a …" → "X : …" ──
+  t=t.replace(/[Dd]ans\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9\s]{0,25?})\s+(?:il\s+y\s+a|ya|il\s+faut|on\s+a|se\s+trouve)\s*/g,
+    (m,name)=>`${name.trim()} : `);
+
+  // ── Pattern 4 : "Pour X, on met …" / "Pour X : …" ──
+  t=t.replace(/[Pp]our\s+(?:le|la|les|l[''`]?)?\s*([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ0-9\s]{0,25?})\s*[,:]\s*/g,
+    (m,name)=>`${name.trim()} : `);
+
+  return t;
+}
+
+// ── Résolution des marqueurs __COPY__ ──
+function iaResolveCopy(buildings){
+  // Cherche les bâtiments avec __COPY__ et duplique les équipements
+  const result=[];
+  for(const b of buildings){
+    if(b.name.startsWith('__COPY__')){
+      const targetName=b.name.replace('__COPY__','').trim();
+      // Trouve la source (premier bâtiment avec équipements)
+      const source=result.length>0?result[0]:null;
+      if(source){
+        result.push({
+          name:targetName,
+          equipment:source.equipment.map(e=>({...e,label:e.label}))
+        });
+      } else {
+        result.push({name:targetName,equipment:b.equipment});
+      }
+    } else {
+      result.push(b);
+    }
+  }
+  return result;
 }
 
 // ── Mots numériques (étendu + langage familier) ──
@@ -1826,6 +1903,19 @@ function iaCleanBldName(raw){
   const eqTerms=IA_EQ.flatMap(e=>e.terms);
   // Découpe sur les mots-outils ou les virgules/points
   let name=raw.trim().replace(/[,:;.]+$/,'');
+
+  // Retire les mots parasites liés aux patterns conversationnels
+  const NOISE_PATTERNS=[
+    /^(?:qui|que|qu[''`]|lequel|laquelle)/i,
+    /^(?:s[''`]appelle|nomme|appele|intitule|surnomme)/i,
+    /^(?:est|sont|sera|etait)/i,
+    /^(?:il|elle|ils|elles|on|nous|vous)/i,
+    /^(?:avec|et|ou|mais|donc|car|ni)/i,
+  ];
+  for(const p of NOISE_PATTERNS){
+    if(p.test(iaNorm(name))) return '';
+  }
+
   // Retire si commence par un terme d'équipement
   for(const t of eqTerms){
     if(iaNorm(name).startsWith(t)) return '';
@@ -1835,9 +1925,14 @@ function iaCleanBldName(raw){
   const clean=[];
   for(const w of words){
     if(IA_STOP_WORDS.has(iaNorm(w))) break;
+    // Stop aussi sur mots parasites isolés
+    if(/^(?:qui|que|est|son|sa|ses|du|de|la|le|les|un|une|des)$/.test(iaNorm(w))) break;
     clean.push(w);
   }
   name=clean.join(' ').trim();
+  // Max 3 mots pour un nom de bâtiment
+  const finalWords=name.split(/\s+/).slice(0,3);
+  name=finalWords.join(' ').trim();
   // Capitalise
   return name.replace(/\b\w/g,c=>c.toUpperCase());
 }
@@ -2022,8 +2117,10 @@ function iaDetectSiteName(text){
 
 // ── Moteur principal — cascade de passes ──
 function iaParseLocal(text){
-  // Pré-traitement : correction + reformulation naturelle
-  const corrected=iaCorrect(text);
+  // Pré-traitement : patterns conversationnels complexes ("qui s'appelle", "Dans X il y a", etc.)
+  const preProcessed=iaPreProcess(text);
+  // Correction + reformulation naturelle
+  const corrected=iaCorrect(preProcessed);
   const t=iaNorm(corrected);
 
   let buildings=null;
@@ -2043,13 +2140,16 @@ function iaParseLocal(text){
   // P5 : séparateur "+"
   if(!buildings) buildings=iaPassPlus(corrected);
 
-  // P5b : séparateur "/" | ";" 
+  // P5b : séparateur "/" | ";"
   if(!buildings) buildings=iaPassSlash(corrected);
 
   // P6 : bâtiment unique (fallback)
   if(!buildings) buildings=iaPassSingle(corrected);
 
   if(!buildings||buildings.every(b=>!b.equipment.length)) return null;
+
+  // Résolution des marqueurs __COPY__ (pareil dans X, idem dans X)
+  buildings=iaResolveCopy(buildings);
 
   // Nettoie les bâtiments vides
   buildings=buildings.filter(b=>b.equipment.length>0);
